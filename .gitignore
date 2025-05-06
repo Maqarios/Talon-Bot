@@ -1,0 +1,9 @@
+# Remove python cache directories
+__pycache__/
+*/__pycache__/
+
+# Remove database directory
+dbs/
+
+# Remove config file
+config.py
