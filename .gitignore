@@ -8,3 +8,7 @@ dbs/
 
 # Remove config file
 config.py
+
+# Remove extra useless files
+temp.py
+TODO.md

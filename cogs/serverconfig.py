@@ -22,7 +22,7 @@ class ServerConfigCog(commands.Cog):
             scenario (str): The new scenario to set.
         """
         # Check if the user is an admin
-        if str(interaction.user.id) not in config.ADMIN_IDS:
+        if interaction.user.id not in config.ADMIN_IDS:
             await interaction.response.send_message(
                 "You do not have permission to use this command.", ephemeral=True
             )

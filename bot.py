@@ -75,7 +75,7 @@ async def register(interaction: discord.Interaction):
 @bot.tree.command(name="register_user", description="Register a user in the database")
 @discord.app_commands.describe(user="The user to change team for")
 async def register_user(interaction: discord.Interaction, user: discord.User):
-    if interaction.user.id in config.ADMIN_IDS:
+    if interaction.user.id not in config.ADMIN_IDS:
         await interaction.response.send_message(
             "You don't have permission to use this command.", ephemeral=True
         )
@@ -148,7 +148,7 @@ async def privacy(interaction: discord.Interaction):
 @bot.tree.command(name="delete_user", description="Delete a user from the database")
 @discord.app_commands.describe(user="The user to delete")
 async def delete_user(interaction: discord.Interaction, user: discord.User):
-    if interaction.user.id in config.ADMIN_IDS:
+    if interaction.user.id not in config.ADMIN_IDS:
         await interaction.response.send_message(
             "You don't have permission to use this command.", ephemeral=True
         )
@@ -181,7 +181,7 @@ async def change_user_team(
     user: discord.User,
     new_team: str,
 ):
-    if interaction.user.id in config.ADMIN_IDS:
+    if interaction.user.id not in config.ADMIN_IDS:
         await interaction.response.send_message(
             "You don't have permission to use this command.", ephemeral=True
         )
@@ -217,7 +217,7 @@ async def change_user_team(
 @bot.tree.command(name="show_user_team_logs", description="Show a user's team logs")
 @discord.app_commands.describe(user="The user to show logs for")
 async def show_user_team_logs(interaction: discord.Interaction, user: discord.User):
-    if interaction.user.id in config.ADMIN_IDS:
+    if interaction.user.id not in config.ADMIN_IDS:
         await interaction.response.send_message(
             "You don't have permission to use this command.", ephemeral=True
         )
@@ -272,7 +272,7 @@ async def add_misconduct(
     severity: int,
     victim_user: discord.User = None,
 ):
-    if interaction.user.id in config.ADMIN_IDS:
+    if interaction.user.id not in config.ADMIN_IDS:
         await interaction.response.send_message(
             "You don't have permission to use this command.", ephemeral=True
         )
@@ -299,7 +299,7 @@ async def add_misconduct(
 @bot.tree.command(name="show_misconducts", description="Show a user's misconduct logs")
 @discord.app_commands.describe(user="The user to show logs for")
 async def show_misconducts(interaction: discord.Interaction, user: discord.User):
-    if interaction.user.id in config.ADMIN_IDS:
+    if interaction.user.id not in config.ADMIN_IDS:
         await interaction.response.send_message(
             "You don't have permission to use this command.", ephemeral=True
         )
@@ -322,7 +322,7 @@ async def show_misconducts(interaction: discord.Interaction, user: discord.User)
 # Slash Command: /restart_gameserver
 @bot.tree.command(name="restart_gameserver", description="Restart the game server")
 async def restart_gameserver(interaction: discord.Interaction):
-    if interaction.user.id in config.ADMIN_IDS:
+    if interaction.user.id not in config.ADMIN_IDS:
         await interaction.response.send_message(
             "You don't have permission to use this command.", ephemeral=True
         )
@@ -350,7 +350,7 @@ async def restart_gameserver(interaction: discord.Interaction):
 async def link_user_bohemia_id(
     interaction: discord.Interaction, user: discord.User, in_game_name: str
 ):
-    if interaction.user.id in config.ADMIN_IDS:
+    if interaction.user.id not in config.ADMIN_IDS:
         await interaction.response.send_message(
             "You don't have permission to use this command.", ephemeral=True
         )
