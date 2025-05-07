@@ -6,7 +6,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils.database_managers import UserDatabaseManager
+from utils.database_managers import users_dbm
 
 
 class MosCog(commands.Cog):
@@ -165,5 +165,4 @@ class MosCog(commands.Cog):
 
 
 async def setup(bot):
-    users_dbm = UserDatabaseManager(config.USER_DB_PATH)
     await bot.add_cog(MosCog(bot, users_dbm, config.PROFILE_DIR_PATH))

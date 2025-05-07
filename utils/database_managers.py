@@ -1,4 +1,5 @@
 import sqlite3
+import config
 
 
 class UserDatabaseManager:
@@ -277,3 +278,8 @@ class MisconductLogDatabaseManager:
         )
         conn.commit()
         conn.close()
+
+
+users_dbm = UserDatabaseManager(config.USER_DB_PATH)
+role_logs_dbm = RoleLogDatabaseManager(config.USER_DB_PATH)
+misconduct_logs_dbm = MisconductLogDatabaseManager(config.USER_DB_PATH)

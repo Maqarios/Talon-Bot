@@ -10,9 +10,9 @@ import config
 from utils.cache import ACTIVE_PLAYERS_BOHEMIA_ID_CACHE
 from utils.utils import restart_gameserver2
 from utils.database_managers import (
-    UserDatabaseManager,
-    RoleLogDatabaseManager,
-    MisconductLogDatabaseManager,
+    users_dbm,
+    role_logs_dbm,
+    misconduct_logs_dbm,
 )
 from utils.active_messages import (
     create_or_update_server_utilization_status_message,
@@ -38,11 +38,6 @@ stats_channel_id = 1352022770120265828
 roles_channel_id = 1195682437628432495
 server_status_channel_id = 1366455194728136804
 
-# Databse Managers
-team_logger_db = UserDatabaseManager(config.USER_DB_PATH)
-role_logger_db = RoleLogDatabaseManager(config.USER_DB_PATH)
-misconduct_logger_db = MisconductLogDatabaseManager(config.USER_DB_PATH)
-
 # Active Messages
 active_mods_am = ActiveModsActiveMessages(
     bot, testing_channel_id, config.SERVERCONFIG_PATH
@@ -62,8 +57,8 @@ async def ping(interaction: discord.Interaction):
 @bot.tree.command(name="register", description="Register yourself in the database")
 async def register(interaction: discord.Interaction):
     user = interaction.user
-    team_logger_db.create(user.id, user.name, user.display_name)
-    role_logger_db.create(
+    users_dbm.create(user.id, user.name, user.display_name)
+    role_logs_dbm.create(
         user.id, user.id, "Unassigned", "User registered himself/herself"
     )
     await interaction.response.send_message(
@@ -81,8 +76,8 @@ async def register_user(interaction: discord.Interaction, user: discord.User):
         )
         return
 
-    team_logger_db.create(user.id, user.name, user.display_name)
-    role_logger_db.create(
+    users_dbm.create(user.id, user.name, user.display_name)
+    role_logs_dbm.create(
         interaction.user.id, user.id, "Unassigned", "User was registered by admin"
     )
     await interaction.response.send_message(
@@ -154,12 +149,12 @@ async def delete_user(interaction: discord.Interaction, user: discord.User):
         )
         return
 
-    team_logger_db.delete(user.id)
-    role_logger_db.mark_as_deleted_by_instigator_discord_id(user.id)
-    role_logger_db.mark_as_deleted_by_target_discord_id(user.id)
-    misconduct_logger_db.mark_as_deleted_by_instigator_discord_id(user.id)
-    misconduct_logger_db.mark_as_deleted_by_target_discord_id(user.id)
-    misconduct_logger_db.mark_as_deleted_by_victim_discord_id(user.id)
+    users_dbm.delete(user.id)
+    role_logs_dbm.mark_as_deleted_by_instigator_discord_id(user.id)
+    role_logs_dbm.mark_as_deleted_by_target_discord_id(user.id)
+    misconduct_logs_dbm.mark_as_deleted_by_instigator_discord_id(user.id)
+    misconduct_logs_dbm.mark_as_deleted_by_target_discord_id(user.id)
+    misconduct_logs_dbm.mark_as_deleted_by_victim_discord_id(user.id)
     await interaction.response.send_message(
         f"Deleted {user.name} from the database.", ephemeral=True
     )
@@ -187,7 +182,7 @@ async def change_user_team(
         )
         return
 
-    old_team = team_logger_db.read_team(user.id)
+    old_team = users_dbm.read_team(user.id)
     old_role = interaction.guild.get_role(config.TEAMS[old_team])
     new_role = interaction.guild.get_role(config.TEAMS[new_team])
 
@@ -200,13 +195,13 @@ async def change_user_team(
     await user.remove_roles(old_role)
     await user.add_roles(new_role)
 
-    team_logger_db.update_team(user.id, new_team)
-    team_logger_db.reset_joined(user.id)
-    role_logger_db.create(
+    users_dbm.update_team(user.id, new_team)
+    users_dbm.reset_joined(user.id)
+    role_logs_dbm.create(
         interaction.user.id, user.id, new_team, "User was assigned a new team by admin"
     )
     await create_or_update_teams_members_status_message(
-        bot, stats_channel_id, team_logger_db
+        bot, stats_channel_id, users_dbm
     )
     await interaction.response.send_message(
         f"Updated {user.name}'s team to {new_team}.", ephemeral=True
@@ -224,9 +219,9 @@ async def show_user_team_logs(interaction: discord.Interaction, user: discord.Us
         return
 
     message = ""
-    for entry in role_logger_db.read_by_target_discord_id(user.id):
-        user_a_discord_displayname = team_logger_db.read_discord_displayname(entry[1])
-        user_b_discord_displayname = team_logger_db.read_discord_displayname(entry[2])
+    for entry in role_logs_dbm.read_by_target_discord_id(user.id):
+        user_a_discord_displayname = users_dbm.read_discord_displayname(entry[1])
+        user_b_discord_displayname = users_dbm.read_discord_displayname(entry[2])
         message += f"User A: {user_a_discord_displayname}, User B: {user_b_discord_displayname}, Team: {entry[3]}, Details: {entry[4]}, Timestamp: {entry[5]}\n"
 
     await interaction.response.send_message(message)
@@ -279,7 +274,7 @@ async def add_misconduct(
         return
 
     victim_id = victim_user.id if victim_user else None
-    misconduct_logger_db.create(
+    misconduct_logs_dbm.create(
         interaction.user.id,
         target_user.id,
         victim_id,
@@ -306,11 +301,11 @@ async def show_misconducts(interaction: discord.Interaction, user: discord.User)
         return
 
     message = ""
-    for entry in misconduct_logger_db.read_by_target_discord_id(user.id):
-        user_a_discord_displayname = team_logger_db.read_discord_displayname(entry[1])
-        user_b_discord_displayname = team_logger_db.read_discord_displayname(entry[2])
+    for entry in misconduct_logs_dbm.read_by_target_discord_id(user.id):
+        user_a_discord_displayname = users_dbm.read_discord_displayname(entry[1])
+        user_b_discord_displayname = users_dbm.read_discord_displayname(entry[2])
         user_c_discord_displayname = (
-            team_logger_db.read_discord_displayname(entry[3])
+            users_dbm.read_discord_displayname(entry[3])
             if entry[3] is not None
             else "N/A"
         )
@@ -356,7 +351,7 @@ async def link_user_bohemia_id(
         )
         return
 
-    team_logger_db.update_bohemia_id(user.id, in_game_name)
+    users_dbm.update_bohemia_id(user.id, in_game_name)
     ACTIVE_PLAYERS_BOHEMIA_ID_CACHE.add_known_player(user.id, in_game_name)
     ACTIVE_PLAYERS_BOHEMIA_ID_CACHE.remove_unknown_player(in_game_name)
     await interaction.response.send_message(
@@ -381,10 +376,10 @@ async def in_game_name_autocomplete(
 @bot.event
 async def on_member_join(user):
     # Check if the member is already registered
-    if team_logger_db.read(user.id):
-        team_logger_db.update_status(user.id, "Active")
-        team_logger_db.reset_joined(user.id)
-        role_logger_db.create(
+    if users_dbm.read(user.id):
+        users_dbm.update_status(user.id, "Active")
+        users_dbm.reset_joined(user.id)
+        role_logs_dbm.create(
             user.id,
             user.id,
             "Unassigned",
@@ -393,8 +388,8 @@ async def on_member_join(user):
         print(f"{user.display_name} is already registered.")
     # register the user in the database
     else:
-        team_logger_db.create(user.id, user.name, user.display_name)
-        role_logger_db.create(
+        users_dbm.create(user.id, user.name, user.display_name)
+        role_logs_dbm.create(
             user.id,
             user.id,
             "Unassigned",
@@ -404,23 +399,23 @@ async def on_member_join(user):
 
     # Update the status message
     await create_or_update_teams_members_status_message(
-        bot, stats_channel_id, team_logger_db
+        bot, stats_channel_id, users_dbm
     )
 
 
 # Leave Tracking
 @bot.event
 async def on_member_remove(user):
-    team_logger_db.update_status(user.id, "Inactive")
-    team_logger_db.update_team(user.id, "Unassigned")
-    role_logger_db.create(
+    users_dbm.update_status(user.id, "Inactive")
+    users_dbm.update_team(user.id, "Unassigned")
+    role_logs_dbm.create(
         user.id,
         user.id,
         "Unassigned",
         "User has left the server",
     )
     await create_or_update_teams_members_status_message(
-        bot, stats_channel_id, team_logger_db
+        bot, stats_channel_id, users_dbm
     )
 
 
@@ -435,7 +430,7 @@ async def on_interaction(interaction):
 
             # Call the update function
             await create_or_update_teams_members_status_message(
-                bot, stats_channel_id, team_logger_db
+                bot, stats_channel_id, users_dbm
             )
         # Update Status Message
         if interaction.data["custom_id"] == "refresh_server_utilization_status_message":
@@ -465,14 +460,14 @@ async def on_raw_reaction_add(payload):
         and message_id == 1366811865094553691
         and emoji.name == "🟩"
     ):
-        old_team = team_logger_db.read_team(user_id)
+        old_team = users_dbm.read_team(user_id)
         role = guild.get_role(1350899518773919908)
         await member.add_roles(role)
 
         if old_team == "Unassigned":
-            team_logger_db.update_team(user_id, "Green Team")
-            team_logger_db.reset_joined(user_id)
-        role_logger_db.create(
+            users_dbm.update_team(user_id, "Green Team")
+            users_dbm.reset_joined(user_id)
+        role_logs_dbm.create(
             user_id,
             user_id,
             "Green Team",
@@ -480,7 +475,7 @@ async def on_raw_reaction_add(payload):
         )
 
         await create_or_update_teams_members_status_message(
-            bot, stats_channel_id, team_logger_db
+            bot, stats_channel_id, users_dbm
         )
 
 
@@ -502,7 +497,7 @@ async def on_ready():
 
     # Set up active messages
     await create_or_update_teams_members_status_message(
-        bot, stats_channel_id, team_logger_db
+        bot, stats_channel_id, users_dbm
     )
 
     # Set up self-looping active messages

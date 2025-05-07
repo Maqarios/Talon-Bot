@@ -1,5 +1,4 @@
-import config
-from utils.database_managers import UserDatabaseManager
+from utils.database_managers import users_dbm
 
 
 class ActivePlayersBohemiaIDCache:
@@ -41,5 +40,4 @@ class ActivePlayersBohemiaIDCache:
         self.add_unknown_player(player_bohemia_id, player_name)
 
 
-users_dbm = UserDatabaseManager(config.USER_DB_PATH)
 ACTIVE_PLAYERS_BOHEMIA_ID_CACHE = ActivePlayersBohemiaIDCache(users_dbm)

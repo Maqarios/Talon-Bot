@@ -1,6 +1,6 @@
 import subprocess
 import json
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 from pathlib import Path
 
 
