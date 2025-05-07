@@ -1,6 +1,5 @@
 import sys
 import signal
-import subprocess
 import asyncio
 
 import discord
@@ -8,7 +7,6 @@ from discord.ext import commands
 
 import config
 from utils.cache import ACTIVE_PLAYERS_BOHEMIA_ID_CACHE
-from utils.utils import restart_gameserver as restart_gameserver2
 from utils.database_managers import (
     USERS_DBM,
     ROLE_LOGS_DBM,
@@ -32,59 +30,6 @@ bot = commands.Bot(command_prefix="/", intents=intents)
 
 # File Watchers
 server_stats_file_watcher = ServerAdminToolsStatsFileWatcher(config.SERVERSTATS_PATH)
-
-
-# Slash Command: /register
-@bot.tree.command(name="register", description="Register yourself in the database")
-async def register(interaction: discord.Interaction):
-    user = interaction.user
-    USERS_DBM.create(user.id, user.name, user.display_name)
-    ROLE_LOGS_DBM.create(
-        user.id, user.id, "Unassigned", "User registered himself/herself"
-    )
-    await interaction.response.send_message(
-        f"Registered {user.name} in the database.", ephemeral=True
-    )
-
-
-# Slash Command: /register_user
-@bot.tree.command(name="register_user", description="Register a user in the database")
-@discord.app_commands.describe(user="The user to change team for")
-async def register_user(interaction: discord.Interaction, user: discord.User):
-    if interaction.user.id not in config.ADMIN_IDS:
-        await interaction.response.send_message(
-            "You don't have permission to use this command.", ephemeral=True
-        )
-        return
-
-    USERS_DBM.create(user.id, user.name, user.display_name)
-    ROLE_LOGS_DBM.create(
-        interaction.user.id, user.id, "Unassigned", "User was registered by admin"
-    )
-    await interaction.response.send_message(
-        f"Registered {user.name} in the database.", ephemeral=True
-    )
-
-
-# Slash Command: /delete_user
-@bot.tree.command(name="delete_user", description="Delete a user from the database")
-@discord.app_commands.describe(user="The user to delete")
-async def delete_user(interaction: discord.Interaction, user: discord.User):
-    if interaction.user.id not in config.ADMIN_IDS:
-        await interaction.response.send_message(
-            "You don't have permission to use this command.", ephemeral=True
-        )
-        return
-
-    USERS_DBM.delete(user.id)
-    ROLE_LOGS_DBM.mark_as_deleted_by_instigator_discord_id(user.id)
-    ROLE_LOGS_DBM.mark_as_deleted_by_target_discord_id(user.id)
-    MISCONDUCT_LOGS_DBM.mark_as_deleted_by_instigator_discord_id(user.id)
-    MISCONDUCT_LOGS_DBM.mark_as_deleted_by_target_discord_id(user.id)
-    MISCONDUCT_LOGS_DBM.mark_as_deleted_by_victim_discord_id(user.id)
-    await interaction.response.send_message(
-        f"Deleted {user.name} from the database.", ephemeral=True
-    )
 
 
 # Slash Command: /change_user_team
@@ -432,6 +377,7 @@ async def shutdown():
 # Load all cogs
 async def main():
     # Load cogs here
+    await bot.load_extension("cogs.user")
     await bot.load_extension("cogs.misc")
     await bot.load_extension("cogs.serverconfig")
     await bot.load_extension("cogs.mos")

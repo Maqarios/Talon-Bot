@@ -1,10 +1,10 @@
-import config
-
 from pathlib import Path
 
 import discord
 from discord import app_commands
 from discord.ext import commands
+
+import config
 
 from utils.database_managers import USERS_DBM
 
@@ -25,6 +25,7 @@ class MosCog(commands.Cog):
     @app_commands.command(
         name="delete_user_loadout", description="Delete the given user's loadout."
     )
+    @app_commands.describe(user="The user to delete the loadout for")
     async def delete_user_loadout(
         self, interaction: discord.Interaction, user: discord.User
     ):
@@ -64,6 +65,7 @@ class MosCog(commands.Cog):
     @app_commands.command(
         name="start_mos_check", description="Get the given user's loadout."
     )
+    @app_commands.describe(user="The user to get the loadout for")
     async def start_mos_check(
         self, interaction: discord.Interaction, user: discord.User
     ):
