@@ -280,6 +280,6 @@ class MisconductLogDatabaseManager:
         conn.close()
 
 
-users_dbm = UserDatabaseManager(config.USER_DB_PATH)
-role_logs_dbm = RoleLogDatabaseManager(config.USER_DB_PATH)
-misconduct_logs_dbm = MisconductLogDatabaseManager(config.USER_DB_PATH)
+USERS_DBM = UserDatabaseManager(config.USER_DB_PATH)
+ROLE_LOGS_DBM = RoleLogDatabaseManager(config.USER_DB_PATH)
+MISCONDUCT_LOGS_DBM = MisconductLogDatabaseManager(config.USER_DB_PATH)

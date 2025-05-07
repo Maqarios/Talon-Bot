@@ -12,6 +12,7 @@ class ServerConfigCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # Slash Command: /change_scenario
     @app_commands.command(name="change_scenario", description="Change server scenario")
     async def change_scenario(self, interaction: discord.Interaction, scenario_id: str):
         """

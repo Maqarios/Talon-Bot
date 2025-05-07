@@ -6,7 +6,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils.database_managers import users_dbm
+from utils.database_managers import USERS_DBM
 
 
 class MosCog(commands.Cog):
@@ -21,6 +21,7 @@ class MosCog(commands.Cog):
     def _get_persistent_loadout_path(self, bohemia_id):
         return f"{self.profile_dir_path}/GMPersistentLoadouts/v2/US/{bohemia_id[:2]}/{bohemia_id}"
 
+    # Slash Command: /delete_user_loadout
     @app_commands.command(
         name="delete_user_loadout", description="Delete the given user's loadout."
     )
@@ -59,6 +60,7 @@ class MosCog(commands.Cog):
             ephemeral=True,
         )
 
+    # Slash Command: /start_mos_check
     @app_commands.command(
         name="start_mos_check", description="Get the given user's loadout."
     )
@@ -123,6 +125,7 @@ class MosCog(commands.Cog):
             ephemeral=True,
         )
 
+    # Slash Command: /stop_mos_check
     @app_commands.command(name="stop_mos_check", description="Stop the loadout check.")
     async def stop_mos_check(self, interaction: discord.Interaction):
         if interaction.user.id not in config.ADMIN_IDS:
@@ -165,4 +168,4 @@ class MosCog(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(MosCog(bot, users_dbm, config.PROFILE_DIR_PATH))
+    await bot.add_cog(MosCog(bot, USERS_DBM, config.PROFILE_DIR_PATH))

@@ -8,11 +8,11 @@ from discord.ext import commands
 
 import config
 from utils.cache import ACTIVE_PLAYERS_BOHEMIA_ID_CACHE
-from utils.utils import restart_gameserver2
+from utils.utils import restart_gameserver as restart_gameserver2
 from utils.database_managers import (
-    users_dbm,
-    role_logs_dbm,
-    misconduct_logs_dbm,
+    USERS_DBM,
+    ROLE_LOGS_DBM,
+    MISCONDUCT_LOGS_DBM,
 )
 from utils.active_messages import (
     create_or_update_server_utilization_status_message,
@@ -34,18 +34,12 @@ bot = commands.Bot(command_prefix="/", intents=intents)
 server_stats_file_watcher = ServerAdminToolsStatsFileWatcher(config.SERVERSTATS_PATH)
 
 
-# Slash Command: /ping
-@bot.tree.command(name="ping", description="Check if the bot is alive")
-async def ping(interaction: discord.Interaction):
-    await interaction.response.send_message("pong", ephemeral=True)
-
-
 # Slash Command: /register
 @bot.tree.command(name="register", description="Register yourself in the database")
 async def register(interaction: discord.Interaction):
     user = interaction.user
-    users_dbm.create(user.id, user.name, user.display_name)
-    role_logs_dbm.create(
+    USERS_DBM.create(user.id, user.name, user.display_name)
+    ROLE_LOGS_DBM.create(
         user.id, user.id, "Unassigned", "User registered himself/herself"
     )
     await interaction.response.send_message(
@@ -63,67 +57,13 @@ async def register_user(interaction: discord.Interaction, user: discord.User):
         )
         return
 
-    users_dbm.create(user.id, user.name, user.display_name)
-    role_logs_dbm.create(
+    USERS_DBM.create(user.id, user.name, user.display_name)
+    ROLE_LOGS_DBM.create(
         interaction.user.id, user.id, "Unassigned", "User was registered by admin"
     )
     await interaction.response.send_message(
         f"Registered {user.name} in the database.", ephemeral=True
     )
-
-
-# Slash Command: /privacy
-@bot.tree.command(name="privacy", description="Show the privacy policy")
-async def privacy(interaction: discord.Interaction):
-    embed = discord.Embed(
-        title="Privacy Policy for Talon Bot",
-        description='Last Updated: May 6, 2025\n\nThis Privacy Policy explains what information Talon Bot ("we," "our," or "us") collects, how we use and store this information, and your rights regarding this information. By joining our discord server, you consent to the data practices described in this policy.',
-        color=discord.Color.blue(),
-    )
-
-    embed.add_field(
-        name="1. Information We Collect",
-        value="We collect and store the following information:\n\n- Discord ID: A unique identifier assigned to your Discord account.\n- Discord Username: Your current username on Discord.\n- Discord Display Name: Your display name as shown on our server.\n- Bohemia ID: Your unique identifier for Bohemia Interactive games which can be used to uniquely identify individuals across platforms.",
-        inline=False,
-    )
-
-    embed.add_field(
-        name="2. How We Use Your Information",
-        value="We collect this information for the following purposes:\n\n- To identify you consistently across username or display name changes.\n- To manage community membership and participation.\n- To apply in-game rewards and punishments through the Bohemia ID system.\n- To maintain server security and enforce community guidelines.",
-        inline=False,
-    )
-
-    embed.add_field(
-        name="3. Data Retention",
-        value="We retain your information for as long as you remain a member of our community or until you request deletion. Please note that requesting data deletion will result in removal from our Discord server, as explained in Section 5.",
-        inline=False,
-    )
-
-    embed.add_field(
-        name="4. Data Sharing",
-        value="We do not sell or share your information with third parties except as necessary to:\n\n- Fulfil the bot's core functionality (applying in-game rewards/punishments).\n- Comply with legal obligations.\n- Enforce our server rules and terms.",
-        inline=False,
-    )
-
-    embed.add_field(
-        name="5. Your Rights and Choices",
-        value="You may request deletion of your data at any time by raising a helpdesk ticket within our Discord server. Please note that data deletion will result in being banned from our Discord server, and by violating our server rules be blacklisted entirely, as we cannot maintain our community without keeping track of required information. We aim to erase your information within one month of the request date.",
-        inline=False,
-    )
-
-    embed.add_field(
-        name="6. Changes to This Policy",
-        value="We may update this Privacy Policy periodically. We will notify users of any significant changes by posting an announcement in our Discord server.",
-        inline=False,
-    )
-
-    embed.add_field(
-        name="7. Contact Information",
-        value="If you have questions about this Privacy Policy, please contact Red-Sep, J-Mac, HZN or May-Day.",
-        inline=False,
-    )
-
-    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 # Slash Command: /delete_user
@@ -136,12 +76,12 @@ async def delete_user(interaction: discord.Interaction, user: discord.User):
         )
         return
 
-    users_dbm.delete(user.id)
-    role_logs_dbm.mark_as_deleted_by_instigator_discord_id(user.id)
-    role_logs_dbm.mark_as_deleted_by_target_discord_id(user.id)
-    misconduct_logs_dbm.mark_as_deleted_by_instigator_discord_id(user.id)
-    misconduct_logs_dbm.mark_as_deleted_by_target_discord_id(user.id)
-    misconduct_logs_dbm.mark_as_deleted_by_victim_discord_id(user.id)
+    USERS_DBM.delete(user.id)
+    ROLE_LOGS_DBM.mark_as_deleted_by_instigator_discord_id(user.id)
+    ROLE_LOGS_DBM.mark_as_deleted_by_target_discord_id(user.id)
+    MISCONDUCT_LOGS_DBM.mark_as_deleted_by_instigator_discord_id(user.id)
+    MISCONDUCT_LOGS_DBM.mark_as_deleted_by_target_discord_id(user.id)
+    MISCONDUCT_LOGS_DBM.mark_as_deleted_by_victim_discord_id(user.id)
     await interaction.response.send_message(
         f"Deleted {user.name} from the database.", ephemeral=True
     )
@@ -169,7 +109,7 @@ async def change_user_team(
         )
         return
 
-    old_team = users_dbm.read_team(user.id)
+    old_team = USERS_DBM.read_team(user.id)
     old_role = interaction.guild.get_role(config.TEAMS[old_team])
     new_role = interaction.guild.get_role(config.TEAMS[new_team])
 
@@ -182,13 +122,13 @@ async def change_user_team(
     await user.remove_roles(old_role)
     await user.add_roles(new_role)
 
-    users_dbm.update_team(user.id, new_team)
-    users_dbm.reset_joined(user.id)
-    role_logs_dbm.create(
+    USERS_DBM.update_team(user.id, new_team)
+    USERS_DBM.reset_joined(user.id)
+    ROLE_LOGS_DBM.create(
         interaction.user.id, user.id, new_team, "User was assigned a new team by admin"
     )
     await create_or_update_teams_members_status_message(
-        bot, config.CHANNEL_IDS["Stats"], users_dbm
+        bot, config.CHANNEL_IDS["Stats"], USERS_DBM
     )
     await interaction.response.send_message(
         f"Updated {user.name}'s team to {new_team}.", ephemeral=True
@@ -206,9 +146,9 @@ async def show_user_team_logs(interaction: discord.Interaction, user: discord.Us
         return
 
     message = ""
-    for entry in role_logs_dbm.read_by_target_discord_id(user.id):
-        user_a_discord_displayname = users_dbm.read_discord_displayname(entry[1])
-        user_b_discord_displayname = users_dbm.read_discord_displayname(entry[2])
+    for entry in ROLE_LOGS_DBM.read_by_target_discord_id(user.id):
+        user_a_discord_displayname = USERS_DBM.read_discord_displayname(entry[1])
+        user_b_discord_displayname = USERS_DBM.read_discord_displayname(entry[2])
         message += f"User A: {user_a_discord_displayname}, User B: {user_b_discord_displayname}, Team: {entry[3]}, Details: {entry[4]}, Timestamp: {entry[5]}\n"
 
     await interaction.response.send_message(message)
@@ -261,7 +201,7 @@ async def add_misconduct(
         return
 
     victim_id = victim_user.id if victim_user else None
-    misconduct_logs_dbm.create(
+    MISCONDUCT_LOGS_DBM.create(
         interaction.user.id,
         target_user.id,
         victim_id,
@@ -288,37 +228,17 @@ async def show_misconducts(interaction: discord.Interaction, user: discord.User)
         return
 
     message = ""
-    for entry in misconduct_logs_dbm.read_by_target_discord_id(user.id):
-        user_a_discord_displayname = users_dbm.read_discord_displayname(entry[1])
-        user_b_discord_displayname = users_dbm.read_discord_displayname(entry[2])
+    for entry in MISCONDUCT_LOGS_DBM.read_by_target_discord_id(user.id):
+        user_a_discord_displayname = USERS_DBM.read_discord_displayname(entry[1])
+        user_b_discord_displayname = USERS_DBM.read_discord_displayname(entry[2])
         user_c_discord_displayname = (
-            users_dbm.read_discord_displayname(entry[3])
+            USERS_DBM.read_discord_displayname(entry[3])
             if entry[3] is not None
             else "N/A"
         )
         message += f"Initiator: {user_a_discord_displayname}\nAccused: {user_b_discord_displayname}\nVictim: {user_c_discord_displayname}\nCategory: {entry[4]}\nType: {entry[5]}\nDetails: {entry[6]}\nSeverity: {entry[7]}\nTimestamp: {entry[8]}\n\n"
 
     await interaction.response.send_message(message)
-
-
-# Slash Command: /restart_gameserver
-@bot.tree.command(name="restart_gameserver", description="Restart the game server")
-async def restart_gameserver(interaction: discord.Interaction):
-    if interaction.user.id not in config.ADMIN_IDS:
-        await interaction.response.send_message(
-            "You don't have permission to use this command.", ephemeral=True
-        )
-        return
-
-    try:
-        restart_gameserver2()
-        await interaction.response.send_message(
-            "Game server is restarting...", ephemeral=True
-        )
-    except subprocess.CalledProcessError as e:
-        await interaction.response.send_message(
-            f"Failed to restart the game server: {e}", ephemeral=True
-        )
 
 
 # Slash Command: /link_user_bohemia_id
@@ -338,7 +258,7 @@ async def link_user_bohemia_id(
         )
         return
 
-    users_dbm.update_bohemia_id(user.id, in_game_name)
+    USERS_DBM.update_bohemia_id(user.id, in_game_name)
     ACTIVE_PLAYERS_BOHEMIA_ID_CACHE.add_known_player(user.id, in_game_name)
     ACTIVE_PLAYERS_BOHEMIA_ID_CACHE.remove_unknown_player(in_game_name)
     await interaction.response.send_message(
@@ -363,10 +283,10 @@ async def in_game_name_autocomplete(
 @bot.event
 async def on_member_join(user):
     # Check if the member is already registered
-    if users_dbm.read(user.id):
-        users_dbm.update_status(user.id, "Active")
-        users_dbm.reset_joined(user.id)
-        role_logs_dbm.create(
+    if USERS_DBM.read(user.id):
+        USERS_DBM.update_status(user.id, "Active")
+        USERS_DBM.reset_joined(user.id)
+        ROLE_LOGS_DBM.create(
             user.id,
             user.id,
             "Unassigned",
@@ -375,8 +295,8 @@ async def on_member_join(user):
         print(f"{user.display_name} is already registered.")
     # register the user in the database
     else:
-        users_dbm.create(user.id, user.name, user.display_name)
-        role_logs_dbm.create(
+        USERS_DBM.create(user.id, user.name, user.display_name)
+        ROLE_LOGS_DBM.create(
             user.id,
             user.id,
             "Unassigned",
@@ -386,23 +306,23 @@ async def on_member_join(user):
 
     # Update the status message
     await create_or_update_teams_members_status_message(
-        bot, config.CHANNEL_IDS["Stats"], users_dbm
+        bot, config.CHANNEL_IDS["Stats"], USERS_DBM
     )
 
 
 # Leave Tracking
 @bot.event
 async def on_member_remove(user):
-    users_dbm.update_status(user.id, "Inactive")
-    users_dbm.update_team(user.id, "Unassigned")
-    role_logs_dbm.create(
+    USERS_DBM.update_status(user.id, "Inactive")
+    USERS_DBM.update_team(user.id, "Unassigned")
+    ROLE_LOGS_DBM.create(
         user.id,
         user.id,
         "Unassigned",
         "User has left the server",
     )
     await create_or_update_teams_members_status_message(
-        bot, config.CHANNEL_IDS["Stats"], users_dbm
+        bot, config.CHANNEL_IDS["Stats"], USERS_DBM
     )
 
 
@@ -417,7 +337,7 @@ async def on_interaction(interaction):
 
             # Call the update function
             await create_or_update_teams_members_status_message(
-                bot, config.CHANNEL_IDS["Stats"], users_dbm
+                bot, config.CHANNEL_IDS["Stats"], USERS_DBM
             )
         # Update Status Message
         if interaction.data["custom_id"] == "refresh_server_utilization_status_message":
@@ -447,14 +367,14 @@ async def on_raw_reaction_add(payload):
         and message_id == 1366811865094553691
         and emoji.name == "🟩"
     ):
-        old_team = users_dbm.read_team(user_id)
+        old_team = USERS_DBM.read_team(user_id)
         role = guild.get_role(1350899518773919908)
         await member.add_roles(role)
 
         if old_team == "Unassigned":
-            users_dbm.update_team(user_id, "Green Team")
-            users_dbm.reset_joined(user_id)
-        role_logs_dbm.create(
+            USERS_DBM.update_team(user_id, "Green Team")
+            USERS_DBM.reset_joined(user_id)
+        ROLE_LOGS_DBM.create(
             user_id,
             user_id,
             "Green Team",
@@ -462,7 +382,7 @@ async def on_raw_reaction_add(payload):
         )
 
         await create_or_update_teams_members_status_message(
-            bot, config.CHANNEL_IDS["Stats"], users_dbm
+            bot, config.CHANNEL_IDS["Stats"], USERS_DBM
         )
 
 
@@ -484,7 +404,7 @@ async def on_ready():
 
     # Set up active messages
     await create_or_update_teams_members_status_message(
-        bot, config.CHANNEL_IDS["Stats"], users_dbm
+        bot, config.CHANNEL_IDS["Stats"], USERS_DBM
     )
 
     # Set up self-looping active messages
@@ -512,6 +432,7 @@ async def shutdown():
 # Load all cogs
 async def main():
     # Load cogs here
+    await bot.load_extension("cogs.misc")
     await bot.load_extension("cogs.serverconfig")
     await bot.load_extension("cogs.mos")
 

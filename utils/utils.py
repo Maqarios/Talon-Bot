@@ -38,7 +38,7 @@ def get_server_utilization():
 
 
 # Restart the gameserver
-def restart_gameserver2():
+def restart_gameserver():
     subprocess.run(["sudo", "systemctl", "restart", "arma-reforger-server"], check=True)
 
 

@@ -1,4 +1,4 @@
-from utils.database_managers import users_dbm
+from utils.database_managers import USERS_DBM
 
 
 class ActivePlayersBohemiaIDCache:
@@ -40,4 +40,4 @@ class ActivePlayersBohemiaIDCache:
         self.add_unknown_player(player_bohemia_id, player_name)
 
 
-ACTIVE_PLAYERS_BOHEMIA_ID_CACHE = ActivePlayersBohemiaIDCache(users_dbm)
+ACTIVE_PLAYERS_BOHEMIA_ID_CACHE = ActivePlayersBohemiaIDCache(USERS_DBM)
