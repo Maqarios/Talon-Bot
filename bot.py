@@ -18,7 +18,6 @@ from utils.active_messages import (
     create_or_update_server_utilization_status_message,
     create_or_update_teams_members_status_message,
     create_or_update_active_players_on_gameserver_status_message,
-    ActiveModsActiveMessages,
 )
 from utils.file_watchers import ServerAdminToolsStatsFileWatcher
 
@@ -30,18 +29,6 @@ intents.reactions = True
 intents.presences = True
 
 bot = commands.Bot(command_prefix="/", intents=intents)
-
-# Channel IDs
-testing_channel_id = 1133538801956962414
-join_us_channe_id = 1353325596310241341
-stats_channel_id = 1352022770120265828
-roles_channel_id = 1195682437628432495
-server_status_channel_id = 1366455194728136804
-
-# Active Messages
-active_mods_am = ActiveModsActiveMessages(
-    bot, testing_channel_id, config.SERVERCONFIG_PATH
-)
 
 # File Watchers
 server_stats_file_watcher = ServerAdminToolsStatsFileWatcher(config.SERVERSTATS_PATH)
@@ -201,7 +188,7 @@ async def change_user_team(
         interaction.user.id, user.id, new_team, "User was assigned a new team by admin"
     )
     await create_or_update_teams_members_status_message(
-        bot, stats_channel_id, users_dbm
+        bot, config.CHANNEL_IDS["Stats"], users_dbm
     )
     await interaction.response.send_message(
         f"Updated {user.name}'s team to {new_team}.", ephemeral=True
@@ -399,7 +386,7 @@ async def on_member_join(user):
 
     # Update the status message
     await create_or_update_teams_members_status_message(
-        bot, stats_channel_id, users_dbm
+        bot, config.CHANNEL_IDS["Stats"], users_dbm
     )
 
 
@@ -415,7 +402,7 @@ async def on_member_remove(user):
         "User has left the server",
     )
     await create_or_update_teams_members_status_message(
-        bot, stats_channel_id, users_dbm
+        bot, config.CHANNEL_IDS["Stats"], users_dbm
     )
 
 
@@ -430,7 +417,7 @@ async def on_interaction(interaction):
 
             # Call the update function
             await create_or_update_teams_members_status_message(
-                bot, stats_channel_id, users_dbm
+                bot, config.CHANNEL_IDS["Stats"], users_dbm
             )
         # Update Status Message
         if interaction.data["custom_id"] == "refresh_server_utilization_status_message":
@@ -439,7 +426,7 @@ async def on_interaction(interaction):
 
             # Call the update function
             await create_or_update_server_utilization_status_message(
-                bot, stats_channel_id
+                bot, config.CHANNEL_IDS["Stats"]
             )
 
 
@@ -456,7 +443,7 @@ async def on_raw_reaction_add(payload):
 
     # Green Team Join
     if (
-        channel_id == roles_channel_id
+        channel_id == config.CHANNEL_IDS["Rules"]
         and message_id == 1366811865094553691
         and emoji.name == "🟩"
     ):
@@ -475,7 +462,7 @@ async def on_raw_reaction_add(payload):
         )
 
         await create_or_update_teams_members_status_message(
-            bot, stats_channel_id, users_dbm
+            bot, config.CHANNEL_IDS["Stats"], users_dbm
         )
 
 
@@ -497,17 +484,17 @@ async def on_ready():
 
     # Set up active messages
     await create_or_update_teams_members_status_message(
-        bot, stats_channel_id, users_dbm
+        bot, config.CHANNEL_IDS["Stats"], users_dbm
     )
 
     # Set up self-looping active messages
     create_or_update_active_players_on_gameserver_status_message.start(
         bot=bot,
-        channel_id=server_status_channel_id,
+        channel_id=config.CHANNEL_IDS["Server Status"],
         server_stats=server_stats_file_watcher,
     )
     create_or_update_server_utilization_status_message.start(
-        bot=bot, channel_id=stats_channel_id
+        bot=bot, channel_id=config.CHANNEL_IDS["Stats"]
     )
 
     # Set up signal handlers
@@ -517,8 +504,7 @@ async def on_ready():
 
 # Shutdown
 async def shutdown():
-    print("Shutdown initiated - removing messages")
-    await active_mods_am.shutdown()
+    print("Shutdown initiated")
     await bot.close()
     sys.exit(0)
 
