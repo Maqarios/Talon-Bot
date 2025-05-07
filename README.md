@@ -1,205 +1,172 @@
 # Talon Bot
 
-A Discord bot created by May-Day for Red Talon Special Operations Group (RTSOG) Server Management. This bot provides comprehensive functionality for managing both a Discord community and an Arma Reforger game server.
+A Discord bot for Red Talon Special Operations Group (RTSOG) server management, created by May-Day. This bot integrates Discord community management with Arma Reforger game server administration.
 
-## Table of Contents
-- [Features Overview](#features-overview)
-- [Server Management Commands](#server-management-commands)
-- [User Management System](#user-management-system)
-- [Team and Role System](#team-and-role-system)
-- [Misconduct Tracking System](#misconduct-tracking-system)
-- [Game Integration](#game-integration)
-- [Technical Architecture](#technical-architecture)
-- [Setup and Configuration](#setup-and-configuration)
+## Features
 
-## Features Overview
+*   **Server Monitoring**:
+    *   Real-time VPS metrics (CPU, Memory, Disk).
+    *   Game server status (online/offline).
+    *   Active player list.
+    *   Active mods list.
+*   **Discord Management**:
+    *   User registration and tracking.
+    *   Team and role management.
+    *   Misconduct tracking.
+*   **Game Server Administration**:
+    *   Server restart.
+    *   Scenario changes.
+    *   Loadout management.
+    *   Bohemia ID linking.
 
-### VPS and Game Server Monitoring
-- Real-time performance metrics (CPU, Memory, Disk)
-- Server status tracking (online/offline)
-- Active player monitoring and listing
-- Automatic mod list compilation
+## Commands
 
-### Discord Server Management
-- User registration and tracking
-- Role assignment and team management
-- Misconduct tracking and documentation
-- Self-service team enrollment
+### General
 
-### Game Server Management
-- Server restart capability
-- Scenario/mission changes
-- Loadout verification system
-- Player BohemiaID integration
+*   `/ping`: Checks bot responsiveness.
+*   `/privacy`: Displays the privacy policy.
 
-## Server Management Commands
+### User Management
 
-### Basic Commands
-- `/ping`: Confirms bot is responsive (responds with "pong")
-- `/privacy`: Displays data usage policy in a formatted embed
+*   `/register`: Registers a user in the database.
+*   `/register_user`: (Admin) Registers another user.
+*   `/delete_user`: (Admin) Deletes a user from the database.
+*   `/change_user_team`: (Admin) Changes a user's team.
+*   `/show_user_team_logs`: (Admin) Shows a user's team logs.
+*   `/add_misconduct`: (Admin) Adds a misconduct record to a user.
+*   `/show_misconducts`: (Admin) Shows a user's misconduct records.
+*   `/link_user_bohemia_id`: (Admin) Links a user's Bohemia ID.
 
-### Server Administration
-- `/restart_gameserver`: Safely restarts the Arma Reforger server
-- `/change_scenario`: Changes the active mission on the game server
+### Server Management
 
-## User Management System
+*   `/restart_gameserver`: (Admin) Restarts the game server.
+*   `/change_scenario`: (Admin) Changes the active scenario.
 
-### Registration
-- **Automatic**: Users are registered when joining the server
-- **Manual**: `/register` for self-registration
-- **Admin**: `/register_user` for admin-initiated registration
-- **Removal**: `/delete_user` for complete data removal (GDPR compliant)
+### MOS Management
 
-### User Database Structure
-| Field | Type | Description |
-|-------|------|-------------|
-| `discord_id` | BIGINT (PK) | Unique Discord identifier |
-| `discord_username` | TEXT | User's Discord username |
-| `discord_displayname` | TEXT | Display name on the server |
-| `status` | TEXT | 'Active', 'Inactive', 'Banned', or 'Retired' |
-| `team` | TEXT | Assigned operational team |
-| `joined` | DATE | When user joined their current team |
-| `bohemia_id` | TEXT (UNIQUE) | Game identity link (can be NULL) |
+*   `/delete_user_loadout`: (Admin) Deletes a user's loadout.
+*   `/start_mos_check`: (Admin) Copies a user's loadout for inspection.
+*   `/stop_mos_check`: (Admin) Restores the admin's original loadout.
 
-### Lifecycle Management
-- **Join Handling**: Auto-registration with 'Active' status
-- **Rejoin Handling**: Status restoration and join date reset
-- **Leave Tracking**: Auto-update to 'Inactive' status
-- **Ban System**: Status-based with record preservation
+## Database
 
-## Team and Role System
+The bot uses a SQLite database to store user data, team logs, and misconduct records.
 
-### Team Structure
-The bot manages members across multiple operational teams:
-- Unassigned (default)
-- Green Team
-- Chalk Team
-- Red Section
-- Grey Section
-- Black Section
-- Red Talon (leadership)
+### Tables
 
-### Team Management
-- `/change_user_team`: Admin command to reassign users between teams
-- `/show_user_team_logs`: View complete history of team changes
-- Reaction-based team joining (Green Team enrollment via 🟩 reaction)
+*   `users`: Stores user information.
+*   `team_logs`: Stores team assignment history.
+*   `misconduct_logs`: Stores misconduct records.
 
-### Team Logs Database
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | INTEGER (PK) | Auto-incrementing ID |
-| `instigator_discord_id` | BIGINT | Admin who made the change |
-| `target_discord_id` | BIGINT | User affected by the change |
-| `team` | TEXT | Team assigned in this change |
-| `details` | TEXT | Context or reason for change |
-| `timestamp` | DATETIME | When change was recorded |
+### User Table
 
-## Misconduct Tracking System
+| Column            | Type    | Description                               |
+| :---------------- | :------ | :---------------------------------------- |
+| `discord_id`      | BIGINT  | Discord user ID (primary key)             |
+| `discord_username`| TEXT    | Discord username                          |
+| `discord_displayname` | TEXT    | Discord display name                      |
+| `status`          | TEXT    | User status (Active, Inactive, Banned, Retired) |
+| `team`            | TEXT    | Assigned team                             |
+| `joined`          | DATE    | Date the user joined the team             |
+| `bohemia_id`      | TEXT    | Bohemia Interactive ID                    |
 
-### Misconduct Documentation
-- `/add_misconduct`: Records infractions with detailed categorization
-- `/show_misconducts`: Displays complete misconduct history for a user
+### Team Logs Table
 
-### Categorization System
-Misconduct is organized into categories with specific types:
-- Operational Violations (MOS Breach, AWOL, etc.)
-- Combat Discipline Violations (Team Killing, Friendly Fire)
-- Cheating & Exploits
-- Behavioral Misconduct
-- Security & Intelligence Violations
-- Leadership & Admin Violations
-- Mission Integrity Violations
+| Column              | Type    | Description                           |
+| :------------------ | :------ | :------------------------------------ |
+| `id`                | INTEGER | Primary key                           |
+| `instigator_discord_id` | BIGINT  | Discord ID of the admin who made the change |
+| `target_discord_id`   | BIGINT  | Discord ID of the affected user       |
+| `team`              | TEXT    | Assigned team                         |
+| `details`           | TEXT    | Details of the change                   |
+| `timestamp`         | DATETIME| Timestamp of the change               |
 
-### Severity Levels
-- **Green (0)**: Minor infractions
-- **Yellow (1)**: Significant issues
-- **Red (2)**: Severe violations
+### Misconduct Logs Table
 
-### Misconduct Database
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | INTEGER (PK) | Auto-incrementing ID |
-| `instigator_discord_id` | BIGINT | Admin recording the misconduct |
-| `target_discord_id` | BIGINT | User who committed the violation |
-| `victim_discord_id` | BIGINT (NULL) | User affected if applicable |
-| `category` | TEXT | General category of misconduct |
-| `type` | TEXT | Specific violation type |
-| `details` | TEXT | Context and description |
-| `severity` | INTEGER | Severity level (0-2) |
-| `timestamp` | DATETIME | When recorded |
+| Column              | Type    | Description                               |
+| :------------------ | :------ | :---------------------------------------- |
+| `id`                | INTEGER | Primary key                               |
+| `instigator_discord_id` | BIGINT  | Discord ID of the admin who added the record |
+| `target_discord_id`   | BIGINT  | Discord ID of the user with misconduct    |
+| `victim_discord_id`   | BIGINT  | Discord ID of the victim (if any)         |
+| `category`          | TEXT    | Misconduct category                       |
+| `type`              | TEXT    | Specific type of misconduct               |
+| `details`           | TEXT    | Details of the incident                   |
+| `severity`          | INTEGER | Severity level (0-2)                      |
+| `timestamp`         | DATETIME| Timestamp of the record                   |
 
-## Game Integration
+## Technical Details
 
-### Bohemia ID Linking
-- `/link_user_bohemia_id`: Links Discord users to in-game identities
-- Intelligent autocomplete from detected unlinked players
-- Automatic player categorization (known/unknown)
+*   **Language**: Python 3.x
+*   **Libraries**:
+    *   discord.py
+    *   watchdog
+*   **File Watchers**: Monitors server stats and config files for changes.
+*   **Caching**: Caches player data for faster lookups.
+*   **Centralized Configuration**: Channel IDs and other settings are stored in `config.py`.
 
-### MOS and Loadout Management
-- `/delete_user_loadout`: Removes saved loadouts for a user
-- `/start_mos_check`: Copies target's loadout to admin for inspection
-- `/stop_mos_check`: Restores admin's original loadout after inspection
+## Setup
 
-### Active Monitoring
-- Real-time player list with game connection status
-- Server status tracking with visual indicators
-- Active mod list compilation and display
+1.  Install dependencies:
 
-## Technical Architecture
+    ```bash
+    pip install -r requirements.txt
+    ```
+2.  Configure the bot:
 
-### File Watchers
-- **ServerAdminToolsStatsFileWatcher**: Monitors game server statistics file
-- **ServerConfigFileWatcher**: Tracks configuration changes
+    *   Set the bot token in `config.py`.
+    *   Configure channel IDs in `config.py`.
+    *   Set the correct paths for server stats and config files.
+3.  Run the bot:
 
-### Active Message System
-The bot maintains several self-updating status messages:
-- Server utilization metrics (CPU/Memory/Disk)
-- Team membership roster with tenure
-- Active player list with connection status
-- Mod list for server configuration
+    ```bash
+    python bot.py
+    ```
 
-### Database Managers
-- **UserDatabaseManager**: Handles user record operations
-- **RoleLogDatabaseManager**: Manages team change history
-- **MisconductLogDatabaseManager**: Tracks misconduct records
+## Configuration
 
-### Player Caching System
-- Maintains lists of known and unknown players
-- Facilitates quick lookups and autocompletion
-- Updates dynamically as players are detected or linked
+### config.py
 
-### Event Handling
-The bot responds automatically to Discord events:
-- Member joins/leaves
-- Button interactions for refreshing data
-- Reaction-based role assignments
+This file contains all the configuration settings for the bot.
 
-## Setup and Configuration
+*   `BOT_TOKEN`: The bot's token.  **Important**: Use environment variables instead of storing the token directly in the file.
+*   `ADMIN_IDS`: A list of Discord user IDs with admin privileges.
+*   `CHANNEL_IDS`: A dictionary of channel IDs for different functions.
+*   `GAMESERVER_PORT`: The port the game server is listening on.
+*   `SERVERSTATS_PATH`: The path to the server stats file.
+*   `PROFILE_DIR_PATH`: The path to the Arma Reforger profile directory.
+*   `ACTIVEMESSAGESIDS_PATH`: The path to the active messages ID file.
+*   `TEAMS`: A dictionary of team names and role IDs.
+*   `MISCONDUCT_CATEGORIES`: A dictionary of misconduct categories and types.
+*   `USER_DB_PATH`: The path to the SQLite database file.
+*   `SLEEP_TIME`: The time to wait before retrying a failed operation.
+*   `SERVERCONFIG_PATH`: The path to the server configuration file.
+*   `SCENARIONS_IDS`: A list of scenario IDs.
 
-### Requirements
-- Python 3.8+
-- discord.py 2.5.2+
-- watchdog 6.0.0+
-- Access to a Linux VPS (for server monitoring)
+### active\_messages\_ids.json
 
-### Configuration Files
-- **config.py**: Contains bot token, server paths, and role IDs
-- **active_messages_ids.json**: Tracks message IDs for updating
+This file stores the IDs of active messages that the bot manages.
 
-### Directory Structure
-- **/utils**: Helper functions and utility classes
-- **/cogs**: Command modules and feature sets
-- **/dbs**: Database files and storage
+## Cogs
 
-### Deployment
-1. Clone the repository
-2. Install dependencies from requirements.txt
-3. Configure token and paths in config.py
-4. Run bot.py to start the system
+The bot's functionality is organized into cogs.
 
-```bash
-# Install dependencies
-pip install -r requirements.txt
+*   `serverconfig.py`: Contains commands for managing the server configuration.
+*   `mos.py`: Contains commands for managing MOS and loadouts.
 
-# Start the bot
-python bot.py
+## Utils
+
+The `utils` directory contains helper functions and classes.
+
+*   `utils.py`: Contains utility functions.
+*   `file_watchers.py`: Contains file watchers for server stats and config files.
+*   `database_managers.py`: Contains database management classes.
+*   `cache.py`: Contains caching mechanisms.
+*   `active_messages.py`: Contains functions for managing active messages.
+
+## Next Steps
+
+*   Implement input validation for commands.
+*   Implement rate limiting.
+*   Implement proper logging.
+*   Add unit tests.
