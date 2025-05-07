@@ -118,7 +118,7 @@ class MisconductCog(commands.Cog):
             return
 
         victim_id = victim_user.id if victim_user else None
-        MISCONDUCT_LOGS_DBM.create(
+        self.misconduct_logs_dbm.create(
             interaction.user.id,
             target_user.id,
             victim_id,
@@ -174,11 +174,15 @@ class MisconductCog(commands.Cog):
             return
 
         message = ""
-        for entry in MISCONDUCT_LOGS_DBM.read_by_target_discord_id(user.id):
-            user_a_discord_displayname = USERS_DBM.read_discord_displayname(entry[1])
-            user_b_discord_displayname = USERS_DBM.read_discord_displayname(entry[2])
+        for entry in self.misconduct_logs_dbm.read_by_target_discord_id(user.id):
+            user_a_discord_displayname = self.users_dbm.read_discord_displayname(
+                entry[1]
+            )
+            user_b_discord_displayname = self.users_dbm.read_discord_displayname(
+                entry[2]
+            )
             user_c_discord_displayname = (
-                USERS_DBM.read_discord_displayname(entry[3])
+                self.users_dbm.read_discord_displayname(entry[3])
                 if entry[3] is not None
                 else "N/A"
             )
