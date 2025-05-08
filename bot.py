@@ -175,6 +175,10 @@ class TalonBot(commands.Bot):
 
     async def shutdown(self):
         print("Shutdown initiated")
+
+        # Shutdown database connections
+        # TODO: Implement database shutdown logic
+
         await bot.close()
 
 

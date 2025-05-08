@@ -102,9 +102,17 @@ def format_time_elapsed(date_str):
 
     # Format based on elapsed time
     if delta.days > 365:
-        return f"{delta.days // 365}y"
+        return (
+            f"{delta.days // 365}y" + f" {(delta.days % 365) % 30}m"
+            if delta.days % 365 > 0
+            else ""
+        )
     elif delta.days > 30:
-        return f"{delta.days // 30}m"
+        return (
+            f"{delta.days // 30}m" + f" {(delta.days % 30)}d"
+            if delta.days % 30 > 0
+            else ""
+        )
     elif delta.days > 0:
         return f"{delta.days}d"
     else:

@@ -176,6 +176,7 @@ async def create_or_update_teams_members_status_message(
             and user_team != "Red Talon"
         ):
             teams[user_team].append((user_displayname, user_joined))
+
     # Add each team as a field in the embed
     for team_name, members in teams.items():
 
@@ -192,7 +193,7 @@ async def create_or_update_teams_members_status_message(
             member_list = "No members"
 
         # Add the team to the embed
-        embed.add_field(name=team_name, value=member_list, inline=True)
+        embed.add_field(name=team_name, value=member_list, inline=False)
 
     # Add footer with timestamp
     embed.set_footer(text="Last updated")
