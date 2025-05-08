@@ -17,7 +17,10 @@ from utils.active_messages import (
     create_or_update_teams_members_status_message,
     create_or_update_active_players_on_gameserver_status_message,
 )
-from utils.file_watchers import ServerAdminToolsStatsFileWatcher
+from utils.file_watchers import (
+    ServerAdminToolsStatsFileWatcher,
+    ServerConfigFileWatcher,
+)
 
 intents = discord.Intents.default()
 intents.members = True
@@ -30,7 +33,7 @@ bot = commands.Bot(command_prefix="/", intents=intents)
 
 # File Watchers
 server_stats_file_watcher = ServerAdminToolsStatsFileWatcher(config.SERVERSTATS_PATH)
-
+server_config_file_watcher = ServerConfigFileWatcher(config.SERVERCONFIG_PATH)
 
 
 # Join Registering
@@ -155,6 +158,7 @@ async def on_ready():
 
     # Start file watcher
     server_stats_file_watcher.start()
+    server_config_file_watcher.start()
 
     # Set up active messages
     await create_or_update_teams_members_status_message(
@@ -180,7 +184,6 @@ async def on_ready():
 async def shutdown():
     print("Shutdown initiated")
     await bot.close()
-    sys.exit(0)
 
 
 # Load all cogs
