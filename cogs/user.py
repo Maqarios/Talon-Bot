@@ -5,14 +5,19 @@ from discord.ext import commands
 import config
 
 from utils.database_managers import USERS_DBM, ROLE_LOGS_DBM, MISCONDUCT_LOGS_DBM
+from utils.cache import ACTIVE_PLAYERS_BOHEMIA_ID_CACHE
+from utils.active_messages import create_or_update_teams_members_status_message
 
 
 class UserCog(commands.Cog):
-    def __init__(self, bot, users_dbm, role_logs_dbm, misconduct_logs_dbm):
+    def __init__(
+        self, bot, users_dbm, role_logs_dbm, misconduct_logs_dbm, bohemia_id_cache
+    ):
         self.bot = bot
         self.users_dbm = users_dbm
         self.role_logs_dbm = role_logs_dbm
         self.misconduct_logs_dbm = misconduct_logs_dbm
+        self.bohemia_id_cache = bohemia_id_cache
 
     # Slash Command: /register
     @app_commands.command(
@@ -70,6 +75,115 @@ class UserCog(commands.Cog):
         await interaction.response.send_message(
             f"Deleted {user.name} from the database.", ephemeral=True
         )
+
+    # Slash Command: /change_user_team
+    @app_commands.command(name="change_user_team", description="Change a user's team")
+    @app_commands.describe(
+        user="The user to change team for", new_team="The new team to assign"
+    )
+    @discord.app_commands.choices(
+        new_team=[
+            discord.app_commands.Choice(name=team, value=team)
+            for team in config.TEAMS.keys()
+        ]
+    )
+    async def change_user_team(
+        self,
+        interaction: discord.Interaction,
+        user: discord.User,
+        new_team: str,
+    ):
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        old_team = USERS_DBM.read_team(user.id)
+        old_role = interaction.guild.get_role(config.TEAMS[old_team])
+        new_role = interaction.guild.get_role(config.TEAMS[new_team])
+
+        if old_team == "Red Talon":
+            await interaction.response.send_message(
+                "User is a Red Talon. User can't be demoted!", ephemeral=True
+            )
+            return
+
+        await user.remove_roles(old_role)
+        await user.add_roles(new_role)
+
+        USERS_DBM.update_team(user.id, new_team)
+        USERS_DBM.reset_joined(user.id)
+        ROLE_LOGS_DBM.create(
+            interaction.user.id,
+            user.id,
+            new_team,
+            "User was assigned a new team by admin",
+        )
+        await create_or_update_teams_members_status_message(
+            self.bot, config.CHANNEL_IDS["Stats"], USERS_DBM
+        )
+        await interaction.response.send_message(
+            f"Updated {user.name}'s team to {new_team}.", ephemeral=True
+        )
+
+    # Slash Command: /show_user_team_logs
+    @app_commands.command(
+        name="show_user_team_logs", description="Show a user's team logs"
+    )
+    @app_commands.describe(user="The user to show logs for")
+    async def show_user_team_logs(
+        self, interaction: discord.Interaction, user: discord.User
+    ):
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        message = ""
+        for entry in ROLE_LOGS_DBM.read_by_target_discord_id(user.id):
+            user_a_discord_displayname = USERS_DBM.read_discord_displayname(entry[1])
+            user_b_discord_displayname = USERS_DBM.read_discord_displayname(entry[2])
+            message += f"User A: {user_a_discord_displayname}, User B: {user_b_discord_displayname}, Team: {entry[3]}, Details: {entry[4]}, Timestamp: {entry[5]}\n"
+
+        await interaction.response.send_message(message)
+
+    # Slash Command: /link_user_bohemia_id
+    @app_commands.command(
+        name="link_user_bohemia_id",
+        description="Link a player bohemia id to the users database",
+    )
+    @app_commands.describe(
+        user="The user to link bohemia id for", in_game_name="The bohemia id to link"
+    )
+    async def link_user_bohemia_id(
+        self, interaction: discord.Interaction, user: discord.User, in_game_name: str
+    ):
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        USERS_DBM.update_bohemia_id(user.id, in_game_name)
+        self.bohemia_id_cache.add_known_player(user.id, in_game_name)
+        self.bohemia_id_cache.remove_unknown_player(in_game_name)
+        await interaction.response.send_message(
+            f"Added {in_game_name} to {user.name}'s bohemia id.", ephemeral=True
+        )
+
+    @link_user_bohemia_id.autocomplete("in_game_name")
+    async def in_game_name_autocomplete(
+        self, interaction: discord.Interaction, current: str
+    ) -> list[discord.app_commands.Choice[str]]:
+        unknown_players = self.bohemia_id_cache.get_unknown_players()
+
+        return [
+            discord.app_commands.Choice(name=player_name, value=str(player_bohemia_id))
+            for player_bohemia_id, player_name in unknown_players.items()
+            if current.lower() in player_name.lower()
+        ][:25]
 
 
 class MisconductCog(commands.Cog):
@@ -192,5 +306,13 @@ class MisconductCog(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(UserCog(bot, USERS_DBM, ROLE_LOGS_DBM, MISCONDUCT_LOGS_DBM))
+    await bot.add_cog(
+        UserCog(
+            bot,
+            USERS_DBM,
+            ROLE_LOGS_DBM,
+            MISCONDUCT_LOGS_DBM,
+            ACTIVE_PLAYERS_BOHEMIA_ID_CACHE,
+        )
+    )
     await bot.add_cog(MisconductCog(bot, USERS_DBM, MISCONDUCT_LOGS_DBM))

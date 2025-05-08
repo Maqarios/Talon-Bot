@@ -60,7 +60,7 @@ DiscordBot/
 ├── cogs/                   # Cog files for different functionalities
 │   ├── __init__.py
 │   ├── misc.py             # Miscellaneous commands (ping, privacy, restart server)
-│   ├── user.py             # User management commands (register, delete, misconduct)
+│   ├── user.py             # User management commands (register, delete, misconduct, team management)
 │   ├── serverconfig.py     # Server configuration commands (change scenario)
 │   └── mos.py              # MOS related commands (loadout management)
 ├── utils/                  # Utility modules
@@ -78,12 +78,15 @@ DiscordBot/
 
 ## Cogs
 
--   **UserCog:** Manages user registration, deletion, and misconduct logging.
+-   **UserCog:** Manages user registration, deletion, misconduct logging, and team assignments.
     -   `/register`: Registers the user in the database.
     -   `/register_user`: Registers a specified user in the database (Admin only).
     -   `/delete_user`: Deletes a specified user from the database (Admin only).
     -   `/add_misconduct`: Adds a misconduct record for a user (Admin only).
     -   `/show_misconducts`: Shows the misconduct logs for a specified user (Admin only).
+    -   `/change_user_team`: Changes a user's team (Admin only).
+    -   `/show_user_team_logs`: Shows a user's team logs (Admin only).
+    -   `/link_user_bohemia_id`: Links a Bohemia ID to a user (Admin only).
 -   **MiscCog:** Includes general utility commands such as `ping`, `privacy`, and `restart_gameserver`.
     -   `/ping`: Checks the bot's latency.
     -   `/privacy`: Displays the privacy policy.
@@ -100,7 +103,7 @@ DiscordBot/
 -   **Database Managers:** Provides classes for interacting with the SQLite database, including user management, role logs, and misconduct logs.
 -   **Active Messages:** Manages and updates Discord messages that display dynamic information, such as server status and team compositions.
 -   **File Watchers:** Monitors server configuration files for changes and automatically updates bot settings.
--   **Cache:** Caching mechanisms for storing and quickly accessing data.
+-   **Cache:** Caching mechanisms for storing and quickly accessing data, such as Bohemia IDs.
 
 ## Contributing
 
