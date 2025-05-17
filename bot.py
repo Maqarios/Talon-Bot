@@ -103,6 +103,26 @@ class TalonBot(commands.Bot):
             bot, config.CHANNEL_IDS["Stats"], USERS_DBM
         )
 
+    async def on_member_update(self, before, after):
+        # Check if the member has agreed to the rules
+        if before.pending and not after.pending:
+            member = after
+            guild = member.guild
+
+            old_team = USERS_DBM.read_team(member.id)
+            role = guild.get_role(1350899518773919908)
+            await member.add_roles(role)
+
+            if old_team == "Unassigned":
+                USERS_DBM.update_team(member.id, "Green Team")
+                USERS_DBM.reset_joined(member.id)
+            ROLE_LOGS_DBM.create(
+                member.id,
+                member.id,
+                "Green Team",
+                "User joined himself/herself as a Green Team member",
+            )
+
     async def on_member_remove(self, user):
         USERS_DBM.update_status(user.id, "Inactive")
         USERS_DBM.update_team(user.id, "Unassigned")
