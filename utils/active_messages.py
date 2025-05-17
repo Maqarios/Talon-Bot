@@ -298,13 +298,13 @@ async def create_or_update_active_players_on_gameserver_status_message(
     # Edit the message with the new content
     try:
         await message.edit(content=None, embed=embed)
-    except discord.NotFound:
-        time.sleep(config.SLEEP_TIME)
-        create_or_update_active_players_on_gameserver_status_message(bot, channel_id)
     except discord.Forbidden:
         print(
             f"Permission denied. Contact the server administrator to check permissions for channel {channel_id}."
         )
+        return False
+    except Exception as e:
+        print(f"Unknown Exception: {e}")
         return False
 
     return True
