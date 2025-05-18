@@ -78,7 +78,7 @@ DiscordBot/
 
 ## Cogs
 
--   **UserCog:** Manages user registration, deletion, misconduct logging, and team assignments.
+-   **UserCog:** Manages user registration, deletion, misconduct logging, team assignments, and GM certification.
     -   `/register`: Registers the user in the database.
     -   `/register_user`: Registers a specified user in the database (Admin only).
     -   `/delete_user`: Deletes a specified user from the database (Admin only).
@@ -87,6 +87,8 @@ DiscordBot/
     -   `/change_user_team`: Changes a user's team (Admin only).
     -   `/show_user_team_logs`: Shows a user's team logs (Admin only).
     -   `/link_user_bohemia_id`: Links a Bohemia ID to a user (Admin only).
+    -   `/certify_user_as_gm`: Certifies a user as a GM (Admin only).
+    -   `/uncertify_user_as_gm`: Removes GM certification from a user (Admin only).
 -   **MiscCog:** Includes general utility commands such as `ping`, `privacy`, and `restart_gameserver`.
     -   `/ping`: Checks the bot's latency.
     -   `/privacy`: Displays the privacy policy.

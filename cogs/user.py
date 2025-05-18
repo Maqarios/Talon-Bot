@@ -7,6 +7,10 @@ import config
 from utils.database_managers import USERS_DBM, ROLE_LOGS_DBM, MISCONDUCT_LOGS_DBM
 from utils.cache import ACTIVE_PLAYERS_BOHEMIA_ID_CACHE
 from utils.active_messages import create_or_update_teams_members_status_message
+from utils.utils import (
+    add_player_to_playersgroups,
+    remove_player_from_playersgroups,
+)
 
 
 class UserCog(commands.Cog):
@@ -184,6 +188,64 @@ class UserCog(commands.Cog):
             for player_bohemia_id, player_name in unknown_players.items()
             if current.lower() in player_name.lower()
         ][:25]
+
+    # Slash Command: /certify_user_as_gm
+    @app_commands.command(
+        name="certify_user_as_gm", description="Certify a user as a GM"
+    )
+    @app_commands.describe(user="The user to certify")
+    async def certify_user_as_gm(
+        self, interaction: discord.Interaction, user: discord.User
+    ):
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        user_bohemia_id = self.users_dbm.read_bohemia_id(user.id)
+        if not user_bohemia_id:
+            await interaction.response.send_message(
+                f"User {user.name} does not have a Bohemia ID linked. Please link it first.",
+                ephemeral=True,
+            )
+            return
+
+        add_player_to_playersgroups(
+            config.PLAYERSGROUPS_PATH, "certifiedGMs", user_bohemia_id
+        )
+        await interaction.response.send_message(
+            f"User {user.name} has been certified as a GM.", ephemeral=True
+        )
+
+    # Slash Command: /uncertify_user_as_gm
+    @app_commands.command(
+        name="uncertify_user_as_gm", description="Uncertify a user as a GM"
+    )
+    @app_commands.describe(user="The user to uncertify")
+    async def uncertify_user_as_gm(
+        self, interaction: discord.Interaction, user: discord.User
+    ):
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        user_bohemia_id = self.users_dbm.read_bohemia_id(user.id)
+        if not user_bohemia_id:
+            await interaction.response.send_message(
+                f"User {user.name} does not have a Bohemia ID linked. Please link it first.",
+                ephemeral=True,
+            )
+            return
+
+        remove_player_from_playersgroups(
+            config.PLAYERSGROUPS_PATH, "certifiedGMs", user_bohemia_id
+        )
+        await interaction.response.send_message(
+            f"User {user.name} has been uncertified as a GM.", ephemeral=True
+        )
 
 
 class MisconductCog(commands.Cog):

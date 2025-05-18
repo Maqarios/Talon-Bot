@@ -187,3 +187,54 @@ def list_active_players(serverstats_path):
         active_players.append(player)
 
     return active_players
+
+
+def add_player_to_playersgroups(playersgroups_path, group_name, value):
+    # Check if the file exists
+    if not Path(playersgroups_path).is_file():
+        print(f"File {playersgroups_path} does not exist. Creating a new file.")
+
+        # Create the file if it doesn't exist
+        with open(playersgroups_path, "w") as file:
+            json.dump({}, file, indent=4)
+
+        raise FileNotFoundError(
+            f"File {playersgroups_path} does not exist. A new file has been created."
+        )
+
+    # Read the JSON file
+    data = {}
+    with open(playersgroups_path, "r") as file:
+        data = json.load(file)
+
+    if group_name not in data:
+        data[group_name] = []
+
+    data[group_name].append(value)
+    with open(playersgroups_path, "w") as file:
+        json.dump(data, file, indent=4)
+
+
+def remove_player_from_playersgroups(playersgroups_path, group_name, value):
+    # Check if the file exists
+    if not Path(playersgroups_path).is_file():
+        print(f"File {playersgroups_path} does not exist. Creating a new file.")
+
+        # Create the file if it doesn't exist
+        with open(playersgroups_path, "w") as file:
+            json.dump({}, file, indent=4)
+
+        raise FileNotFoundError(
+            f"File {playersgroups_path} does not exist. A new file has been created."
+        )
+
+    # Read the JSON file
+    data = {}
+    with open(playersgroups_path, "r") as file:
+        data = json.load(file)
+
+    if group_name in data and value in data[group_name]:
+        data[group_name].remove(value)
+
+        with open(playersgroups_path, "w") as file:
+            json.dump(data, file, indent=4)
