@@ -210,7 +210,9 @@ def add_player_to_playersgroups(playersgroups_path, group_name, value):
     if group_name not in data:
         data[group_name] = []
 
-    data[group_name].append(value)
+    if value not in data[group_name]:
+        data[group_name].append(value)
+
     with open(playersgroups_path, "w") as file:
         json.dump(data, file, indent=4)
 
