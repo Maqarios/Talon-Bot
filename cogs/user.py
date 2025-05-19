@@ -211,9 +211,12 @@ class UserCog(commands.Cog):
             )
             return
 
+        gm_role = interaction.guild.get_role(1351952596394446968)
         add_player_to_playersgroups(
             config.PLAYERSGROUPS_PATH, "certifiedGMs", user_bohemia_id
         )
+
+        await user.add_roles(gm_role)
         await interaction.response.send_message(
             f"User {user.name} has been certified as a GM.", ephemeral=True
         )
@@ -240,9 +243,12 @@ class UserCog(commands.Cog):
             )
             return
 
+        gm_role = interaction.guild.get_role(1351952596394446968)
         remove_player_from_playersgroups(
             config.PLAYERSGROUPS_PATH, "certifiedGMs", user_bohemia_id
         )
+        
+        await user.remove_roles(gm_role)
         await interaction.response.send_message(
             f"User {user.name} has been uncertified as a GM.", ephemeral=True
         )
