@@ -240,3 +240,105 @@ def remove_player_from_playersgroups(playersgroups_path, group_name, value):
 
         with open(playersgroups_path, "w") as file:
             json.dump(data, file, indent=4)
+
+
+def add_mod_to_serverconfig(serverconfig_path, mod_id, mod_name, mod_version):
+    # Check if the file exists
+    if not Path(serverconfig_path).is_file():
+        print(f"File {serverconfig_path} does not exist.")
+        return
+
+    # Read the JSON file
+    data = {}
+    with open(serverconfig_path, "r") as file:
+        data = json.load(file)
+
+    # Check if the file is empty
+    if not data:
+        print(f"File {serverconfig_path} is empty.")
+        return
+
+    # Check if the expected keys are present
+    if "game" not in data or "mods" not in data["game"]:
+        print(f"File {serverconfig_path} does not contain the expected structure.")
+        return
+
+    data["game"]["mods"].append(
+        {
+            "modId": mod_id,
+            "name": mod_name,
+            "version": mod_version,
+        }
+    )
+
+    # Write back to the JSON file
+    with open(serverconfig_path, "w") as file:
+        json.dump(data, file, indent=4)
+
+
+def update_mod_version_in_serverconfig(serverconfig_path, mod_id, new_version):
+    # Check if the file exists
+    if not Path(serverconfig_path).is_file():
+        print(f"File {serverconfig_path} does not exist.")
+        return
+
+    # Read the JSON file
+    data = {}
+    with open(serverconfig_path, "r") as file:
+        data = json.load(file)
+
+    # Check if the file is empty
+    if not data:
+        print(f"File {serverconfig_path} is empty.")
+        return
+
+    # Check if the expected keys are present
+    if "game" not in data or "mods" not in data["game"]:
+        print(f"File {serverconfig_path} does not contain the expected structure.")
+        return
+
+    # Update the mod version
+    for mod in data["game"]["mods"]:
+        if mod["modId"] == mod_id:
+            mod["version"] = new_version
+            break
+
+    # Write back to the JSON file
+    with open(serverconfig_path, "w") as file:
+        json.dump(data, file, indent=4)
+
+
+def remove_mod_from_serverconfig(serverconfig_path, mod_id):
+    # Check if the file exists
+    if not Path(serverconfig_path).is_file():
+        print(f"File {serverconfig_path} does not exist.")
+        return
+
+    # Read the JSON file
+    data = {}
+    with open(serverconfig_path, "r") as file:
+        data = json.load(file)
+
+    # Check if the file is empty
+    if not data:
+        print(f"File {serverconfig_path} is empty.")
+        return
+
+    # Check if the expected keys are present
+    if "game" not in data or "mods" not in data["game"]:
+        print(f"File {serverconfig_path} does not contain the expected structure.")
+        return
+
+    # Update the mod version
+    index = -1
+    for i, mod in enumerate(data["game"]["mods"]):
+        if mod["modId"] == mod_id:
+            index = i
+            break
+
+    if index != -1:
+        data["game"]["mods"].pop(index)
+
+    # Write back to the JSON file
+    with open(serverconfig_path, "w") as file:
+        json.dump(data, file, indent=4)
