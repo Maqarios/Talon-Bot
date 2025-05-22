@@ -58,10 +58,5 @@ class ServerConfigCog(commands.Cog):
         )
 
 
-class ModTracker:
-    def __init__(self, mod_list):
-        self.mod_list = mod_list
-
-
 async def setup(bot):
     await bot.add_cog(ServerConfigCog(bot))
