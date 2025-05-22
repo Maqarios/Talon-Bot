@@ -173,8 +173,13 @@ class ServerConfigGame:
         self.password = ""
         self.scenarioId = ""
         self.mods = []
+        self.searchable_mods = {}
 
     def _sanitize_data(self, data):
         for field in self.fields:
             if field in data:
                 setattr(self, field, data[field])
+
+        for mod in self.mods:
+            mod_id = mod.pop("modId")
+            self.searchable_mods[mod_id] = mod
