@@ -44,11 +44,20 @@ class WorkshopWebsiteScarper:
 
         # Get dependencies recursively
         for dependency_id in latest_version["dependencyTree"]["dependencies"]:
+
+            # Skip if the dependency is the same mod or already in the list
+            if dependency_id == self.mod_id or dependency_id in self.dependecies:
+                continue
+
+            # Create a new instance of WorkshopWebsiteScarper for the dependency
             dependency = WorkshopWebsiteScarper(dependency_id)
+
+            # Merge the dependency data into the current instance
             self.dependecies[dependency_id] = {
                 "name": dependency.name,
                 "version": dependency.version,
             }
             self.dependecies.update(dependency.dependecies)
 
-            time.sleep(1)  # To avoid rate limiting
+            # Handle excessive requests
+            time.sleep(1)
