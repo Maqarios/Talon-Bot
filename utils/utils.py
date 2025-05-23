@@ -68,7 +68,7 @@ def get_active_messages_id(activemessagesids_path, entry):
     return data[entry]
 
 
-def set_active_messages_id(activemessagesids_path, entry, messages_ids):
+def set_active_messages_id(activemessagesids_path, entry, messages_id=None):
     # Check if the file exists
     if not Path(activemessagesids_path).is_file():
         print(f"File {activemessagesids_path} does not exist. Creating a new file.")
@@ -85,7 +85,10 @@ def set_active_messages_id(activemessagesids_path, entry, messages_ids):
         data = json.load(file)
 
     # Update the entry with new messages_ids
-    data[entry] = messages_ids
+    if messages_id is not None:
+        data[entry] = messages_id
+    elif entry in data:
+        data.pop(entry)
 
     # Write back to the JSON file
     with open(activemessagesids_path, "w") as file:
