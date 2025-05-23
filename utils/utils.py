@@ -3,6 +3,8 @@ import json
 from datetime import datetime, date
 from pathlib import Path
 
+import discord
+
 
 def is_port_listening(port=2001):
     result = subprocess.run(
@@ -345,3 +347,15 @@ def remove_mod_from_serverconfig(serverconfig_path, mod_id):
     # Write back to the JSON file
     with open(serverconfig_path, "w") as file:
         json.dump(data, file, indent=4)
+
+
+def get_channel(bot, channel_id):
+    try:
+        channel = bot.get_channel(channel_id)
+        return channel
+    except discord.NotFound:
+        print(f"Channel with ID {channel_id} not found.")
+        return None
+    except discord.Forbidden:
+        print(f"Permission denied to access channel {channel_id}.")
+        return None
