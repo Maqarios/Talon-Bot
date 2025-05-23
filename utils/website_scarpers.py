@@ -57,6 +57,3 @@ class WorkshopWebsiteScarper:
                 "version": dependency.version,
             }
             self.dependencies.update(dependency.dependencies)
-
-            # Handle excessive requests
-            time.sleep(1)
