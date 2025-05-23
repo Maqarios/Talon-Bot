@@ -26,12 +26,15 @@ class TalonBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # File Watchers
         self.server_stats_file_watcher = ServerAdminToolsStatsFileWatcher(
             config.SERVERSTATS_PATH
         )
         self.server_config_file_watcher = ServerConfigFileWatcher(
             config.SERVERCONFIG_PATH
         )
+
+        # Active Messages
         self.mods_active_messages = ModsActiveMessages(
             self,
             config.CHANNEL_IDS["Mods"],
@@ -80,9 +83,7 @@ class TalonBot(commands.Bot):
         create_or_update_server_utilization_status_message.start(
             bot=bot, channel_id=config.CHANNEL_IDS["Stats"]
         )
-
-        # TODO: Implement mods active messages
-        await self.mods_active_messages.create_or_update_mod_messages()
+        self.mods_active_messages.create_or_update_mod_messages.start()
 
     async def on_member_join(self, user):
         # Check if the member is already registered

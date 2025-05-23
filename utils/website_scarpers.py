@@ -37,23 +37,25 @@ class WorkshopWebsiteScarper:
         json_data = json.loads(script_data)
 
         # Extract version
-        versions = json_data["props"]["pageProps"]["asset"]["versions"]
-        latest_version = versions[0]
-        self.name = latest_version["asset"]["name"]
-        self.version = latest_version["version"]
+        asset_data = json_data["props"]["pageProps"]["asset"]
+        self.name = asset_data["name"]
+        self.version = asset_data["currentVersionNumber"]
+        dependencies = asset_data["dependencies"]
 
         # Get dependencies recursively
-        for dependency_id in latest_version["dependencyTree"]["dependencies"]:
+        for dependency in dependencies:
+            dependency_id = dependency["asset"]["id"]
+
             # Skip if the dependency is the same mod or already in the list
             if dependency_id == self.mod_id or dependency_id in self.dependencies:
                 continue
 
             # Create a new instance of WorkshopWebsiteScarper for the dependency
-            dependency = WorkshopWebsiteScarper(dependency_id, self.dependencies)
+            dependency_data = WorkshopWebsiteScarper(dependency_id, self.dependencies)
 
             # Merge the dependency data into the current instance
             self.dependencies[dependency_id] = {
-                "name": dependency.name,
-                "version": dependency.version,
+                "name": dependency_data.name,
+                "version": dependency_data.version,
             }
-            self.dependencies.update(dependency.dependencies)
+            self.dependencies.update(dependency_data.dependencies)

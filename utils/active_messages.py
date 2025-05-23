@@ -20,6 +20,7 @@ from utils.utils import (
     add_mod_to_serverconfig,
     update_mod_version_in_serverconfig,
     remove_mod_from_serverconfig,
+    get_channel,
 )
 from utils.website_scarpers import WorkshopWebsiteScarper
 
@@ -319,6 +320,9 @@ class ModsActiveMessages:
         self.channel_id = channel_id
         self.server_config = server_config
 
+        self.channel = None
+        self.messages_cache = {}
+
     def make_mod_message(self, mod_id):
         # Get mod details
         workshop_scarper = WorkshopWebsiteScarper(mod_id)
@@ -398,34 +402,19 @@ class ModsActiveMessages:
         return embed, view
 
     async def create_or_update_mod_message(self, mod_id):
-        # Fetch the channel
-        try:
-            channel = self.bot.get_channel(self.channel_id)
-        except discord.NotFound:
-            print(f"Channel with ID {self.channel_id} not found.")
-            return False
-        except discord.Forbidden:
-            print(f"Permission denied to access channel {self.channel_id}.")
-            return False
+        if not self.channel:
+            self.channel = get_channel(self.bot, self.channel_id)
 
         # Fetch the message
-        message_id = None
         message = None
-        try:
-            message_id = get_active_messages_id(
-                config.ACTIVEMESSAGESIDS_PATH,
-                "mod_{}_status_message_id".format(mod_id),
-            )
-            message = await channel.fetch_message(message_id)
-        except (FileNotFoundError, KeyError, discord.NotFound) as e:
+        message_key = "mod_{}_status_message_id".format(mod_id)
+        if message_key in self.messages_cache:
+            message = self.messages_cache[message_key]
+        else:
             message = await create_empty_message(
-                channel, "Creating mod message for mod ID {} ...".format(mod_id)
+                self.channel, "Creating mod message for mod ID {} ...".format(mod_id)
             )
-            set_active_messages_id(
-                config.ACTIVEMESSAGESIDS_PATH,
-                "mod_{}_status_message_id".format(mod_id),
-                message.id,
-            )
+            self.messages_cache[message_key] = message
 
         # Get the message content
         embed, view = self.make_mod_message(mod_id)
@@ -434,7 +423,7 @@ class ModsActiveMessages:
         try:
             await message.edit(content=None, embed=embed, view=view)
         except discord.NotFound:
-            print(f"Message with ID {message_id} not found. Skipping!")
+            print(f"Message with ID {message.id} not found. Skipping!")
             return False
         except discord.Forbidden:
             print(
@@ -444,8 +433,13 @@ class ModsActiveMessages:
 
         return True
 
+    @tasks.loop(hours=24)
     async def create_or_update_mod_messages(self):
-        for mod_id in list(self.server_config.game.searchable_mods.keys())[:3]:
+        # Clear all previous messages
+        await self.clear()
+
+        # Create a new message for each mod
+        for mod_id in list(self.server_config.game.searchable_mods.keys()):
             time.sleep(config.SLEEP_TIME)
             await self.create_or_update_mod_message(mod_id)
 
@@ -496,30 +490,17 @@ class ModsActiveMessages:
                     )
 
     async def delete_mod_message(self, mod_id):
-        # Fetch the channel
-        try:
-            channel = self.bot.get_channel(self.channel_id)
-        except discord.NotFound:
-            print(f"Channel with ID {self.channel_id} not found.")
-            return False
-        except discord.Forbidden:
-            print(f"Permission denied to access channel {self.channel_id}.")
+        if not self.channel:
             return False
 
-        # Fetch the message
-        message_id = None
-        message = None
-        try:
-            message_id = get_active_messages_id(
-                config.ACTIVEMESSAGESIDS_PATH,
-                "mod_{}_status_message_id".format(mod_id),
-            )
-            message = await channel.fetch_message(message_id)
+        message_key = "mod_{}_status_message_id".format(mod_id)
+        if message_key in self.messages_cache:
+            message = self.messages_cache[message_key]
             await message.delete()
-        except (FileNotFoundError, KeyError, discord.NotFound) as e:
-            print(f"Message with ID {message_id} not found. Skipping!")
 
     async def clear(self):
-        for mod_id in list(self.server_config.game.searchable_mods.keys())[:3]:
-            time.sleep(config.SLEEP_TIME)
-            self.delete_mod_message(mod_id)
+        if not self.channel:
+            self.channel = get_channel(self.bot, self.channel_id)
+
+        await self.channel.purge(limit=None)
+        self.messages_cache.clear()
