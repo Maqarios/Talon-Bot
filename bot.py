@@ -18,6 +18,7 @@ from utils.active_messages import (
     create_or_update_server_utilization_status_message,
     create_or_update_teams_members_status_message,
     create_or_update_active_players_on_gameserver_status_message,
+    ModsActiveMessages,
 )
 
 
@@ -30,6 +31,11 @@ class TalonBot(commands.Bot):
         )
         self.server_config_file_watcher = ServerConfigFileWatcher(
             config.SERVERCONFIG_PATH
+        )
+        self.mods_active_messages = ModsActiveMessages(
+            self,
+            config.CHANNEL_IDS["Mods"],
+            self.server_config_file_watcher,
         )
 
     async def setup_hook(self):
@@ -74,6 +80,9 @@ class TalonBot(commands.Bot):
         create_or_update_server_utilization_status_message.start(
             bot=bot, channel_id=config.CHANNEL_IDS["Stats"]
         )
+
+        # TODO: Implement mods active messages
+        await self.mods_active_messages.create_or_update_mod_messages()
 
     async def on_member_join(self, user):
         # Check if the member is already registered
@@ -159,6 +168,14 @@ class TalonBot(commands.Bot):
                 await create_or_update_server_utilization_status_message(
                     bot, config.CHANNEL_IDS["Stats"]
                 )
+
+            # Mod related interactions
+            if interaction.channel_id == config.CHANNEL_IDS["Mods"]:
+                # Acknowledge the button press
+                await interaction.response.defer(ephemeral=True)
+
+                # Call the update function
+                await self.mods_active_messages.handle_interaction(interaction)
 
     async def on_raw_reaction_add(self, payload):
         # Get information from the payload

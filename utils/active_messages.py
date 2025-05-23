@@ -3,6 +3,7 @@ import time
 import datetime
 
 import discord
+from discord import ComponentType, InteractionType
 from discord.ui import Button, View
 from discord.ext import tasks
 
@@ -16,9 +17,11 @@ from utils.utils import (
     get_active_messages_id,
     set_active_messages_id,
     format_time_elapsed,
-    list_active_mods,
-    list_active_players,
+    add_mod_to_serverconfig,
+    update_mod_version_in_serverconfig,
+    remove_mod_from_serverconfig,
 )
+from utils.website_scarpers import WorkshopWebsiteScarper
 
 
 async def create_empty_message(channel, initial_message="Empty Message"):
@@ -310,272 +313,213 @@ async def create_or_update_active_players_on_gameserver_status_message(
     return True
 
 
-class UserTrackerActiveMessages:
-    def __init__(self, bot, channel_id, db):
+class ModsActiveMessages:
+    def __init__(self, bot, channel_id, server_config):
         self.bot = bot
         self.channel_id = channel_id
-        self.db = db
-        self.active_messages = {}
+        self.server_config = server_config
 
-    async def create_status_message(self):
-        channel = self.bot.get_channel(self.channel_id)
-
-        # Create refresh button
-        refresh_button = Button(
-            style=discord.ButtonStyle.secondary,
-            emoji="🔄",
-            custom_id="refresh_team_status",
-        )
-        view = View(timeout=None)
-        view.add_item(refresh_button)
-
-        # Initial empty message with button
-        message = await channel.send("Loading team status...", view=view)
-        self.active_messages["status"] = message.id
-
-        # Update the message content
-        await self.update_status_message()
-
-    async def update_status_message(self):
-        if "status" not in self.active_messages:
-            await self.create_status_message()
-
-        channel = self.bot.get_channel(self.channel_id)
-        try:
-            message = await channel.fetch_message(self.active_messages["status"])
-
-            # Get data from database
-            users = self.db.get_users_for_active_message()
-
-            # Group users by team
-            teams = {team: [] for team in config.TEAMS}
-            for user_displayname, user_status, user_team, user_joined in users:
-                if user_status == "Active" and user_team in config.TEAMS:
-                    teams[user_team].append((user_displayname, user_joined))
-
-            # Create Discord embed for better formatting
-            embed = discord.Embed(
-                title="Team Status",
-                color=discord.Color.blue(),
-                timestamp=datetime.datetime.now(),
-            )
-
-            # Add each team as a field in the embed
-            for team_name, members in teams.items():
-                if team_name == "Red Talon":
-                    continue
-
-                # Join member names with newlines
-                member_list = "\n".join(
-                    [
-                        f"• {member} ({format_time_elapsed(joined)})"
-                        for member, joined in members
-                    ]
-                )
-                if not member_list:
-                    member_list = "No members"
-
-                # Use inline=True to create columns
-                embed.add_field(name=team_name, value=member_list, inline=True)
-
-                # Add empty spacer field
-                # embed.add_field(name="\u200b", value="\u200b", inline=True)
-
-            # Add footer with timestamp
-            embed.set_footer(text="Last updated")
-
-            await message.edit(content=None, embed=embed)
-        except discord.NotFound:
-            # Message was deleted, create a new one
-            await self.create_status_message()
-
-    async def shutdown(self):
-        # Delete tracked messages
-        for msg_type, msg_id in self.active_messages.items():
-            try:
-                channel = self.bot.get_channel(self.channel_id)
-                message = await channel.fetch_message(msg_id)
-                await message.delete()
-                print(f"✅ Deleted message: {msg_type}, Channel: {self.channel_id}")
-            except:
-                print(
-                    f"❌ Failed to delete message: {msg_type}, Channel: {self.channel_id}"
-                )
-
-
-class GreenTeamActiveMessages:
-    def __init__(self, bot, channel_id):
-        self.bot = bot
-        self.channel_id = channel_id
-        self.active_messages = {}
-
-    async def create_join_green_team_message(self):
-        channel = self.bot.get_channel(self.channel_id)
-
-        # Create refresh button
-        refresh_button = Button(
-            style=discord.ButtonStyle.secondary,
-            emoji="🟩",
-            custom_id="join_green_team",
-        )
-        view = View(timeout=None)
-        view.add_item(refresh_button)
-
-        # Initial empty message with button
-        message = await channel.send("Loading Join Green Team Message...", view=view)
-        self.active_messages["message"] = message.id
+    def make_mod_message(self, mod_id):
+        # Get mod details
+        workshop_scarper = WorkshopWebsiteScarper(mod_id)
+        # TODO: handle if mod is not found
 
         # Create Discord embed for better formatting
         embed = discord.Embed(
-            title="React with 🟩 to join Green Team",
-            color=discord.Color.blue(),
+            title="Mod Details",
+            color=discord.Color.green(),
             timestamp=datetime.datetime.now(),
         )
-        await message.edit(content=None, embed=embed)
 
-    async def shutdown(self):
-        # Delete tracked messages
-        for msg_type, msg_id in self.active_messages.items():
-            try:
-                channel = self.bot.get_channel(self.channel_id)
-                message = await channel.fetch_message(msg_id)
-                await message.delete()
-                print(f"✅ Deleted message: {msg_type}, Channel: {self.channel_id}")
-            except:
-                print(
-                    f"❌ Failed to delete message: {msg_type}, Channel: {self.channel_id}"
-                )
+        # Create the view with buttons
+        view = View(timeout=None)
 
+        # Create buttons
+        update_button = Button(
+            style=discord.ButtonStyle.green,
+            label="Update Mod",
+            custom_id="update_mod:{}:{}".format(mod_id, workshop_scarper.version),
+        )
+        check_button = Button(
+            style=discord.ButtonStyle.blurple,
+            label="Check for updates",
+            custom_id="check_mod:{}".format(mod_id),
+        )
+        delete_button = Button(
+            style=discord.ButtonStyle.red,
+            label="Remove Mod",
+            custom_id="remove_mod:{}".format(mod_id),
+        )
 
-class ActiveModsActiveMessages:
-    def __init__(self, bot, channel_id, serverconfig_path):
-        self.bot = bot
-        self.channel_id = channel_id
-        self.serverconfig_path = serverconfig_path
-        self.active_messages = {}
-
-    @tasks.loop(hours=24)
-    async def update_active_mods_message(self):
-        # Delete all previously tracked messages
-        channel = self.bot.get_channel(self.channel_id)
-        for msg_type, msg_id in list(self.active_messages.items()):
-            try:
-                old_message = await channel.fetch_message(msg_id)
-                await old_message.delete()
-                del self.active_messages[msg_type]  # Remove from tracking
-            except discord.NotFound:
-                # Message was already deleted
-                del self.active_messages[msg_type]
-
-        # Get active mods from serverconfig
-        active_mods = sorted(list_active_mods(self.serverconfig_path))
-
-        # Format the active mods as a plain text message
-        if not active_mods:
-            content = "No Active Mods"
-            new_message = await channel.send(content)
-            self.active_messages["message"] = new_message.id
-            return
-
-        # Split the active mods into chunks based on cumulative character length
-        max_length = 2000  # Discord's character limit
-        chunks = []
-        current_chunk = []
-        current_length = 0
-
-        for mod in active_mods:
-            mod_entry = f"• {mod}\n"
-            if current_length + len(mod_entry) > max_length:
-                # Start a new chunk if adding this mod exceeds the limit
-                chunks.append("".join(current_chunk))
-                current_chunk = []
-                current_length = 0
-            current_chunk.append(mod_entry)
-            current_length += len(mod_entry)
-
-        # Add the last chunk
-        if current_chunk:
-            chunks.append("".join(current_chunk))
-
-        # Send new messages for each chunk and track them
-        for i, chunk in enumerate(chunks):
-            new_message = await channel.send(chunk)
-            self.active_messages[f"message_{i}"] = new_message.id
-
-    async def shutdown(self):
-        # Delete tracked messages
-        for msg_type, msg_id in self.active_messages.items():
-            try:
-                channel = self.bot.get_channel(self.channel_id)
-                message = await channel.fetch_message(msg_id)
-                await message.delete()
-                print(f"✅ Deleted message: {msg_type}, Channel: {self.channel_id}")
-            except:
-                print(
-                    f"❌ Failed to delete message: {msg_type}, Channel: {self.channel_id}"
-                )
-
-
-class ActivePlayersActiveMessages:
-    def __init__(self, bot, channel_id, serverstats_path):
-        self.bot = bot
-        self.channel_id = channel_id
-        self.serverstats_path = serverstats_path
-        self.active_messages = {}
-
-    @tasks.loop(minutes=5)
-    async def update_active_players_message(self):
-        channel = self.bot.get_channel(self.channel_id)
-
-        if "status" not in self.active_messages:
-            view = View(timeout=None)
-
-            # Initial empty message
-            message = await channel.send("Loading current active players...", view=view)
-            self.active_messages["status"] = message.id
-
-        try:
-            message = await channel.fetch_message(self.active_messages["status"])
-
-            # Get data from database
-            active_players = sorted(list_active_players(self.serverstats_path))
-
-            # Create Discord embed for better formatting
-            embed = discord.Embed(
-                title="Players Online",
-                color=discord.Color.blue(),
-                timestamp=datetime.datetime.now(),
+        if (
+            self.server_config.game.searchable_mods[mod_id]["version"]
+            != workshop_scarper.version
+        ):
+            embed.title = "{} (Update Available)".format(workshop_scarper.name)
+            embed.color = discord.Color.blue()
+            embed.description = "**Version: {} ⟶ {}**\n[Workshop Link]({})".format(
+                self.server_config.game.searchable_mods[mod_id]["version"],
+                workshop_scarper.version,
+                config.WORKSHOP_BASE_URL + mod_id,
             )
 
-            if not active_players:
-                embed.add_field(
-                    name=f"Active Players: {len(active_players)}",
-                    value="",
-                )
-            else:
-                embed.add_field(
-                    name=f"Active Players: {len(active_players)}",
-                    value="\n".join([f"• {player}" for player in active_players]),
-                    inline=False,
+            view.add_item(update_button)
+            view.add_item(check_button)
+            view.add_item(delete_button)
+
+        else:
+            embed.title = "{}".format(workshop_scarper.name)
+            embed.color = discord.Color.green()
+            embed.description = "**Version: {}**\n[Workshop Link]({})".format(
+                workshop_scarper.version, config.WORKSHOP_BASE_URL + mod_id
+            )
+
+            view.add_item(check_button)
+            view.add_item(delete_button)
+
+        if workshop_scarper.dependencies:
+            dependency_content = ""
+
+            for (
+                dependency_id,
+                dependency_details,
+            ) in workshop_scarper.dependencies.items():
+                dependency_content += "**{}** ([Workshop Link]({}))\n".format(
+                    dependency_details["name"],
+                    config.WORKSHOP_BASE_URL + dependency_id,
                 )
 
-            # Add footer with timestamp
-            embed.set_footer(text="Last updated")
+            embed.add_field(
+                name="Dependencies",
+                value=dependency_content,
+                inline=False,
+            )
 
-            await message.edit(content=None, embed=embed)
+        return embed, view
+
+    async def create_or_update_mod_message(self, mod_id):
+        # Fetch the channel
+        try:
+            channel = self.bot.get_channel(self.channel_id)
         except discord.NotFound:
-            # Message was deleted, create a new one
-            await self.create_active_players_message()
+            print(f"Channel with ID {self.channel_id} not found.")
+            return False
+        except discord.Forbidden:
+            print(f"Permission denied to access channel {self.channel_id}.")
+            return False
 
-    async def shutdown(self):
-        # Delete tracked messages
-        for msg_type, msg_id in self.active_messages.items():
-            try:
-                channel = self.bot.get_channel(self.channel_id)
-                message = await channel.fetch_message(msg_id)
-                await message.delete()
-                print(f"✅ Deleted message: {msg_type}, Channel: {self.channel_id}")
-            except:
-                print(
-                    f"❌ Failed to delete message: {msg_type}, Channel: {self.channel_id}"
-                )
+        # Fetch the message
+        message_id = None
+        message = None
+        try:
+            message_id = get_active_messages_id(
+                config.ACTIVEMESSAGESIDS_PATH,
+                "mod_{}_status_message_id".format(mod_id),
+            )
+            message = await channel.fetch_message(message_id)
+        except (FileNotFoundError, KeyError, discord.NotFound) as e:
+            message = await create_empty_message(
+                channel, "Creating mod message for mod ID {} ...".format(mod_id)
+            )
+            set_active_messages_id(
+                config.ACTIVEMESSAGESIDS_PATH,
+                "mod_{}_status_message_id".format(mod_id),
+                message.id,
+            )
+
+        # Get the message content
+        embed, view = self.make_mod_message(mod_id)
+
+        # Edit the message with the new content
+        try:
+            await message.edit(content=None, embed=embed, view=view)
+        except discord.NotFound:
+            print(f"Message with ID {message_id} not found. Skipping!")
+            return False
+        except discord.Forbidden:
+            print(
+                f"Permission denied. Contact the server administrator to check permissions for channel {self.channel_id}."
+            )
+            return False
+
+        return True
+
+    async def create_or_update_mod_messages(self):
+        for mod_id in list(self.server_config.game.searchable_mods.keys())[:3]:
+            time.sleep(config.SLEEP_TIME)
+            await self.create_or_update_mod_message(mod_id)
+
+    async def handle_interaction(self, interaction):
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        # Check if the interaction is from a button
+        if interaction.type == InteractionType.component:
+            if interaction.data["component_type"] == 2:
+                custom_id = interaction.data["custom_id"].split(":")
+                message_type = custom_id[0]
+                mod_id = custom_id[1]
+
+                if message_type == "update_mod":
+                    new_version = custom_id[2]
+                    update_mod_version_in_serverconfig(
+                        config.SERVERCONFIG_PATH, mod_id, new_version
+                    )
+
+                    await self.create_or_update_mod_message(mod_id)
+                    await interaction.response.send_message(
+                        "Mod {} has been updated to version {}.".format(
+                            mod_id, new_version
+                        ),
+                        ephemeral=True,
+                    )
+                elif message_type == "check_mod":
+                    await self.create_or_update_mod_message(mod_id)
+                    await interaction.response.send_message(
+                        "Mod {} has been checked for updates.".format(mod_id),
+                        ephemeral=True,
+                    )
+                elif message_type == "remove_mod":
+                    remove_mod_from_serverconfig(config.SERVERCONFIG_PATH, mod_id)
+                    await self.delete_mod_message(mod_id)
+
+                    set_active_messages_id(
+                        config.ACTIVEMESSAGESIDS_PATH,
+                        "mod_{}_status_message_id".format(mod_id),
+                    )
+
+                    await interaction.response.send_message(
+                        "Mod {} has been removed.".format(mod_id), ephemeral=True
+                    )
+
+    async def delete_mod_message(self, mod_id):
+        # Fetch the channel
+        try:
+            channel = self.bot.get_channel(self.channel_id)
+        except discord.NotFound:
+            print(f"Channel with ID {self.channel_id} not found.")
+            return False
+        except discord.Forbidden:
+            print(f"Permission denied to access channel {self.channel_id}.")
+            return False
+
+        # Fetch the message
+        message_id = None
+        message = None
+        try:
+            message_id = get_active_messages_id(
+                config.ACTIVEMESSAGESIDS_PATH,
+                "mod_{}_status_message_id".format(mod_id),
+            )
+            message = await channel.fetch_message(message_id)
+            await message.delete()
+        except (FileNotFoundError, KeyError, discord.NotFound) as e:
+            print(f"Message with ID {message_id} not found. Skipping!")
+
+    async def clear(self):
+        for mod_id in list(self.server_config.game.searchable_mods.keys())[:3]:
+            time.sleep(config.SLEEP_TIME)
+            self.delete_mod_message(mod_id)
