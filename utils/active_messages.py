@@ -439,8 +439,8 @@ class ModsActiveMessages:
         await self.clear()
 
         # Create a new message for each mod
-        for mod_id in list(self.server_config.game.searchable_mods.keys()):
-            time.sleep(config.SLEEP_TIME)
+        for mod_id in list(self.server_config.game.searchable_mods.keys())[:3]:
+            time.sleep(config.MOD_UPDATE_SLEEP_TIME)
             await self.create_or_update_mod_message(mod_id)
 
     async def handle_interaction(self, interaction):

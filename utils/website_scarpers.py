@@ -59,3 +59,5 @@ class WorkshopWebsiteScarper:
                 "version": dependency_data.version,
             }
             self.dependencies.update(dependency_data.dependencies)
+
+            time.sleep(config.DEPENDECY_SLEEP_TIME)
