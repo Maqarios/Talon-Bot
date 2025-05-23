@@ -9,14 +9,14 @@ import config
 
 
 class WorkshopWebsiteScarper:
-    def __init__(self, mod_id, dependecies={}):
+    def __init__(self, mod_id, dependencies=None):
         self.url = config.WORKSHOP_BASE_URL + str(mod_id)
 
         self.mod_id = mod_id
         self.name = None
         self.version = None
 
-        self.dependecies = dependecies
+        self.dependencies = {} if not dependencies else dependencies
 
         self.scrape()
 
@@ -44,20 +44,19 @@ class WorkshopWebsiteScarper:
 
         # Get dependencies recursively
         for dependency_id in latest_version["dependencyTree"]["dependencies"]:
-
             # Skip if the dependency is the same mod or already in the list
-            if dependency_id == self.mod_id or dependency_id in self.dependecies:
+            if dependency_id == self.mod_id or dependency_id in self.dependencies:
                 continue
 
             # Create a new instance of WorkshopWebsiteScarper for the dependency
-            dependency = WorkshopWebsiteScarper(dependency_id)
+            dependency = WorkshopWebsiteScarper(dependency_id, self.dependencies)
 
             # Merge the dependency data into the current instance
-            self.dependecies[dependency_id] = {
+            self.dependencies[dependency_id] = {
                 "name": dependency.name,
                 "version": dependency.version,
             }
-            self.dependecies.update(dependency.dependecies)
+            self.dependencies.update(dependency.dependencies)
 
             # Handle excessive requests
             time.sleep(1)
