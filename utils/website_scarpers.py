@@ -7,9 +7,11 @@ from bs4 import BeautifulSoup
 
 import config
 
+from utils.cache import MODS_DETAILS_CACHE
+
 
 class WorkshopWebsiteScarper:
-    def __init__(self, mod_id, dependencies=None):
+    def __init__(self, mod_id, dependencies=None, force_scrape=False):
         self.url = config.WORKSHOP_BASE_URL + str(mod_id)
 
         self.mod_id = mod_id
@@ -18,14 +20,28 @@ class WorkshopWebsiteScarper:
 
         self.dependencies = {} if not dependencies else dependencies
 
-        self.scrape()
+        if force_scrape or not MODS_DETAILS_CACHE.get_mod(self.mod_id):
+            self.scrape()
+        else:
+            self.scrape_from_cache()
+
+    def scrape_from_cache(self):
+        mod_details_cache = MODS_DETAILS_CACHE.get_mod(self.mod_id)
+
+        self.name = mod_details_cache.name
+        self.version = mod_details_cache.version
+        self.dependencies = mod_details_cache.dependencies
 
     def scrape(self):
         response = requests.get(self.url)
         if response.status_code == 200:
             html_data = response.text
             self.parse_data(html_data)
+
+            # Cache the mod details
+            MODS_DETAILS_CACHE.add_mod(self.mod_id, self)
         else:
+            # TODO: create a retry mechanism
             print(
                 f"Failed to retrieve data from {self.url}. Status code: {response.status_code}"
             )

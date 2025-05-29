@@ -10,7 +10,7 @@ from discord.ext import tasks
 sys.path.append("..")  # Adjust the path to import config and utils
 import config
 
-from utils.cache import ACTIVE_PLAYERS_BOHEMIA_ID_CACHE
+from utils.cache import ACTIVE_PLAYERS_BOHEMIA_ID_CACHE, MODS_DETAILS_CACHE
 from utils.utils import (
     is_port_listening,
     get_server_utilization,
@@ -437,6 +437,9 @@ class ModsActiveMessages:
     async def create_or_update_mod_messages(self):
         # Clear all previous messages
         await self.clear()
+
+        # clear cache
+        MODS_DETAILS_CACHE.clear()
 
         # Create a new message for each mod
         for mod_id in list(self.server_config.game.searchable_mods.keys())[:3]:
