@@ -1,16 +1,14 @@
-import sys
 import time
 import datetime
 
 import discord
-from discord import ComponentType, InteractionType
+from discord import InteractionType
 from discord.ui import Button, View
 from discord.ext import tasks
 
-sys.path.append("..")  # Adjust the path to import config and utils
 import config
 
-from utils.cache import ACTIVE_PLAYERS_BOHEMIA_ID_CACHE, MODS_DETAILS_CACHE
+from utils.cache import ACTIVE_PLAYERS_BOHEMIA_ID_CACHE
 from utils.utils import (
     is_port_listening,
     get_server_utilization,
@@ -22,7 +20,10 @@ from utils.utils import (
     remove_mod_from_serverconfig,
     get_channel,
 )
-from utils.website_scarpers import WorkshopWebsiteScarper
+from utils.website_scarpers import (
+    WorkshopModPageWebsiteScarper,
+    WorkshopModSearchWebsiteScarper,
+)
 
 
 async def create_empty_message(channel, initial_message="Empty Message"):
@@ -322,10 +323,11 @@ class ModsActiveMessages:
 
         self.channel = None
         self.messages_cache = {}
+        self.mod_idx = -1  # Used to track the index of the mod being processed
 
     def make_mod_message(self, mod_id):
         # Get mod details
-        workshop_scarper = WorkshopWebsiteScarper(mod_id)
+        workshop_scarper = WorkshopModPageWebsiteScarper(mod_id)
         # TODO: handle if mod is not found
 
         # Create Discord embed for better formatting
@@ -364,7 +366,7 @@ class ModsActiveMessages:
             embed.description = "**Version: {} ⟶ {}**\n[Workshop Link]({})".format(
                 self.server_config.game.searchable_mods[mod_id]["version"],
                 workshop_scarper.version,
-                config.WORKSHOP_BASE_URL + mod_id,
+                config.WORKSHOP_MOD_PAGE_URL + mod_id,
             )
 
             view.add_item(update_button)
@@ -375,7 +377,7 @@ class ModsActiveMessages:
             embed.title = "{}".format(workshop_scarper.name)
             embed.color = discord.Color.green()
             embed.description = "**Version: {}**\n[Workshop Link]({})".format(
-                workshop_scarper.version, config.WORKSHOP_BASE_URL + mod_id
+                workshop_scarper.version, config.WORKSHOP_MOD_PAGE_URL + mod_id
             )
 
             view.add_item(check_button)
@@ -388,10 +390,7 @@ class ModsActiveMessages:
                 dependency_id,
                 dependency_details,
             ) in workshop_scarper.dependencies.items():
-                dependency_content += "**{}** ([Workshop Link]({}))\n".format(
-                    dependency_details["name"],
-                    config.WORKSHOP_BASE_URL + dependency_id,
-                )
+                dependency_content += "{}\n".format(dependency_details["name"])
 
             embed.add_field(
                 name="Dependencies",
@@ -401,50 +400,90 @@ class ModsActiveMessages:
 
         return embed, view
 
+    def make_mod_search_message(self, search_query):
+        # Get mod details
+        workshop_scarper = WorkshopModSearchWebsiteScarper(search_query)
+
+        # Create Discord embed for better formatting
+        embed = discord.Embed(
+            title="Mod Details",
+            color=discord.Color.green(),
+            timestamp=datetime.datetime.now(),
+        )
+
+        # Create the view with buttons
+        view = View(timeout=None)
+
+        # Create buttons
+        for idx, mod in enumerate(workshop_scarper):
+            add_button = Button(
+                style=discord.ButtonStyle.blurple,
+                label="{}. {}".format(idx + 1, mod["name"]),
+                custom_id="add_mod:{}:{}:{}".format(
+                    mod["id"], mod["name"], mod["version"]
+                ),
+                row=idx,
+            )
+
+            is_installed = mod["id"] in self.server_config.game.searchable_mods
+            if is_installed:
+                add_button.style = discord.ButtonStyle.grey
+                add_button.label += " (Installed)"
+                add_button.disabled = True
+
+            view.add_item(add_button)
+
+        if workshop_scarper:
+            embed.description = "Search results for **{}**:".format(search_query)
+        else:
+            embed.discription = "No mods found for **{}**.".format(search_query)
+            embed.color = discord.Color.red()
+
+        return embed, view
+
     async def create_or_update_mod_message(self, mod_id):
         if not self.channel:
             self.channel = get_channel(self.bot, self.channel_id)
 
-        # Fetch the message
-        message = None
-        message_key = "mod_{}_status_message_id".format(mod_id)
-        if message_key in self.messages_cache:
-            message = self.messages_cache[message_key]
-        else:
-            message = await create_empty_message(
-                self.channel, "Creating mod message for mod ID {} ...".format(mod_id)
-            )
-            self.messages_cache[message_key] = message
-
         # Get the message content
         embed, view = self.make_mod_message(mod_id)
 
-        # Edit the message with the new content
-        try:
+        # Fetch the message
+        message_key = "mod_{}_status_message_id".format(mod_id)
+        if message_key in self.messages_cache:
+            message = self.messages_cache[message_key]
             await message.edit(content=None, embed=embed, view=view)
-        except discord.NotFound:
-            print(f"Message with ID {message.id} not found. Skipping!")
-            return False
-        except discord.Forbidden:
-            print(
-                f"Permission denied. Contact the server administrator to check permissions for channel {self.channel_id}."
-            )
-            return False
+        else:
+            message = await self.channel.send(embed=embed, view=view)
+            self.messages_cache[message_key] = message
 
-        return True
-
-    @tasks.loop(hours=24)
+    @tasks.loop(minutes=1)
     async def create_or_update_mod_messages(self):
-        # Clear all previous messages
-        await self.clear()
+        if self.mod_idx == -1:
+            # Clear all previous messages
+            await self.clear()
 
-        # clear cache
-        MODS_DETAILS_CACHE.clear()
+        self.mod_idx += 1
+        if self.mod_idx >= len(self.server_config.game.mods):
+            self.mod_idx = 0
 
-        # Create a new message for each mod
-        for mod_id in list(self.server_config.game.searchable_mods.keys())[:3]:
-            time.sleep(config.MOD_UPDATE_SLEEP_TIME)
-            await self.create_or_update_mod_message(mod_id)
+        # Create or update the message for the chosen mod
+        mod = self.server_config.game.mods[self.mod_idx]
+        mod_id = mod["modId"]
+        await self.create_or_update_mod_message(mod_id)
+
+    async def create_mod_search_message(self, search_query):
+        if not self.channel:
+            self.channel = get_channel(self.bot, self.channel_id)
+
+        embed, view = self.make_mod_search_message(search_query)
+
+        await self.channel.send(embed=embed, view=view)
+
+    async def handle_message(self, message):
+        search_query = message.content.strip()
+        await message.delete()
+        await self.create_mod_search_message(search_query)
 
     async def handle_interaction(self, interaction):
         if interaction.user.id not in config.ADMIN_IDS:
@@ -460,36 +499,35 @@ class ModsActiveMessages:
                 message_type = custom_id[0]
                 mod_id = custom_id[1]
 
-                if message_type == "update_mod":
+                if message_type == "add_mod":
+                    mod_name = custom_id[2]
+                    mod_version = custom_id[3]
+                    add_mod_to_serverconfig(
+                        config.SERVERCONFIG_PATH, mod_id, mod_name, mod_version
+                    )
+
+                    await interaction.message.delete()
+                    await self.create_or_update_mod_message(mod_id)
+
+                elif message_type == "update_mod":
                     new_version = custom_id[2]
                     update_mod_version_in_serverconfig(
                         config.SERVERCONFIG_PATH, mod_id, new_version
                     )
 
                     await self.create_or_update_mod_message(mod_id)
-                    await interaction.response.send_message(
-                        "Mod {} has been updated to version {}.".format(
-                            mod_id, new_version
-                        ),
-                        ephemeral=True,
-                    )
+
                 elif message_type == "check_mod":
                     await self.create_or_update_mod_message(mod_id)
-                    await interaction.response.send_message(
-                        "Mod {} has been checked for updates.".format(mod_id),
-                        ephemeral=True,
-                    )
+
                 elif message_type == "remove_mod":
                     remove_mod_from_serverconfig(config.SERVERCONFIG_PATH, mod_id)
+
                     await self.delete_mod_message(mod_id)
 
-                    set_active_messages_id(
-                        config.ACTIVEMESSAGESIDS_PATH,
-                        "mod_{}_status_message_id".format(mod_id),
-                    )
-
+                else:
                     await interaction.response.send_message(
-                        "Mod {} has been removed.".format(mod_id), ephemeral=True
+                        "Unknown command.", ephemeral=True
                     )
 
     async def delete_mod_message(self, mod_id):

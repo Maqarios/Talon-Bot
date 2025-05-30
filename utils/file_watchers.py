@@ -181,5 +181,8 @@ class ServerConfigGame:
                 setattr(self, field, data[field])
 
         for mod in self.mods:
-            mod_id = mod.pop("modId")
-            self.searchable_mods[mod_id] = mod
+            mod_id = mod["modId"]
+            self.searchable_mods[mod_id] = {
+                "name": mod["name"],
+                "version": mod["version"],
+            }

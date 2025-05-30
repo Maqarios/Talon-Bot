@@ -40,25 +40,4 @@ class ActivePlayersBohemiaIDCache:
         self.add_unknown_player(player_bohemia_id, player_name)
 
 
-class ModsDetailsCache:
-    def __init__(self):
-        self.cache = {}
-
-    def get_mod(self, mod_id):
-        if mod_id in self.cache:
-            return self.cache.get(mod_id)
-        return None
-
-    def add_mod(self, mod_id, mod_details):
-        self.cache[mod_id] = mod_details
-
-    def remove_mod(self, mod_id):
-        if mod_id in self.cache:
-            del self.cache[mod_id]
-
-    def clear(self):
-        self.cache.clear()
-
-
 ACTIVE_PLAYERS_BOHEMIA_ID_CACHE = ActivePlayersBohemiaIDCache(USERS_DBM)
-MODS_DETAILS_CACHE = ModsDetailsCache()

@@ -146,6 +146,14 @@ class TalonBot(commands.Bot):
             bot, config.CHANNEL_IDS["Stats"], USERS_DBM
         )
 
+    async def on_message(self, message):
+        if message.author.bot:
+            return
+
+        # Mod related message
+        if message.channel.id == config.CHANNEL_IDS["Mods"]:
+            await self.mods_active_messages.handle_message(message)
+
     async def on_interaction(self, interaction):
         if interaction.data and "custom_id" in interaction.data:
             # Update Status Message
