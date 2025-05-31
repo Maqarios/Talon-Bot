@@ -537,6 +537,7 @@ class ModsActiveMessages:
         message_key = "mod_{}_status_message_id".format(mod_id)
         if message_key in self.messages_cache:
             message = self.messages_cache[message_key]
+            self.messages_cache.pop(message_key)
             await message.delete()
 
     async def clear(self):
