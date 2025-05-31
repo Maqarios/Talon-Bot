@@ -450,10 +450,11 @@ class ModsActiveMessages:
 
         # Fetch the message
         message_key = "mod_{}_status_message_id".format(mod_id)
-        if message_key in self.messages_cache:
+
+        try:
             message = self.messages_cache[message_key]
             await message.edit(content=None, embed=embed, view=view)
-        else:
+        except (KeyError, discord.NotFound) as e:
             message = await self.channel.send(embed=embed, view=view)
             self.messages_cache[message_key] = message
 
