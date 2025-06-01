@@ -180,6 +180,7 @@ class ServerConfigGame:
             if field in data:
                 setattr(self, field, data[field])
 
+        self.searchable_mods = {}
         for mod in self.mods:
             mod_id = mod["modId"]
             self.searchable_mods[mod_id] = {
