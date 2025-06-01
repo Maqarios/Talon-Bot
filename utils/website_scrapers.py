@@ -38,7 +38,7 @@ def WorkshopModSearchWebsiteScraper(search_query):
 
 class WorkshopModPageWebsiteScraper:
     def __init__(self, mod_id, dependencies=None):
-        self.url = config.WORKSHOP_MOD_PAGE_URL + str(mod_id)
+        self.url = config.WORKSHOP_MOD_PAGE_URL + str(mod_id) + "/changelog"
 
         self.mod_id = mod_id
         self.name = None
