@@ -66,6 +66,11 @@ class ServerAdminToolsStatsFileWatcher(FileSystemEventHandler):
             if field in data:
                 setattr(self, field, data[field])
 
+        # Sort connected players by name
+        self.connected_players = dict(
+            sorted(self.connected_players.items(), key=lambda x: x[1].lower())
+        )
+
     def on_modified(self, event):
         if os.path.abspath(event.src_path) == os.path.abspath(self.filepath):
             data = self._load_file()
@@ -180,6 +185,10 @@ class ServerConfigGame:
             if field in data:
                 setattr(self, field, data[field])
 
+        # Sort mods by name
+        self.mods = sorted(self.mods, key=lambda x: x["name"].lower())
+
+        # Create searchable_mods dictionary
         self.searchable_mods = {}
         for mod in self.mods:
             mod_id = mod["modId"]
