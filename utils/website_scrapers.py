@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 import config
 
 
-def WorkshopModSearchWebsiteScarper(search_query):
+def WorkshopModSearchWebsiteScraper(search_query):
     url = config.WORKSHOP_MOD_SEARCH_URL + search_query.replace(" ", "+")
     response = requests.get(url)
     if response.status_code != 200:
@@ -37,7 +37,7 @@ def WorkshopModSearchWebsiteScarper(search_query):
     return mods
 
 
-class WorkshopModPageWebsiteScarper:
+class WorkshopModPageWebsiteScraper:
     def __init__(self, mod_id, dependencies=None):
         self.url = config.WORKSHOP_MOD_PAGE_URL + str(mod_id)
 

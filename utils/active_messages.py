@@ -20,9 +20,9 @@ from utils.utils import (
     remove_mod_from_serverconfig,
     get_channel,
 )
-from utils.website_scarpers import (
-    WorkshopModPageWebsiteScarper,
-    WorkshopModSearchWebsiteScarper,
+from utils.website_scrapers import (
+    WorkshopModPageWebsiteScraper,
+    WorkshopModSearchWebsiteScraper,
 )
 
 
@@ -327,7 +327,7 @@ class ModsActiveMessages:
 
     def make_mod_message(self, mod_id):
         # Get mod details
-        workshop_scarper = WorkshopModPageWebsiteScarper(mod_id)
+        workshop_scraper = WorkshopModPageWebsiteScraper(mod_id)
         # TODO: handle if mod is not found
 
         # Create Discord embed for better formatting
@@ -344,7 +344,7 @@ class ModsActiveMessages:
         update_button = Button(
             style=discord.ButtonStyle.green,
             label="Update Mod",
-            custom_id="update_mod:{}:{}".format(mod_id, workshop_scarper.version),
+            custom_id="update_mod:{}:{}".format(mod_id, workshop_scraper.version),
         )
         check_button = Button(
             style=discord.ButtonStyle.blurple,
@@ -359,13 +359,13 @@ class ModsActiveMessages:
 
         if (
             self.server_config.game.searchable_mods[mod_id]["version"]
-            != workshop_scarper.version
+            != workshop_scraper.version
         ):
-            embed.title = "{} (Update Available)".format(workshop_scarper.name)
+            embed.title = "{} (Update Available)".format(workshop_scraper.name)
             embed.color = discord.Color.blue()
             embed.description = "**Version: {} ⟶ {}**\n[Workshop Link]({})".format(
                 self.server_config.game.searchable_mods[mod_id]["version"],
-                workshop_scarper.version,
+                workshop_scraper.version,
                 config.WORKSHOP_MOD_PAGE_URL + mod_id,
             )
 
@@ -374,22 +374,22 @@ class ModsActiveMessages:
             view.add_item(delete_button)
 
         else:
-            embed.title = "{}".format(workshop_scarper.name)
+            embed.title = "{}".format(workshop_scraper.name)
             embed.color = discord.Color.green()
             embed.description = "**Version: {}**\n[Workshop Link]({})".format(
-                workshop_scarper.version, config.WORKSHOP_MOD_PAGE_URL + mod_id
+                workshop_scraper.version, config.WORKSHOP_MOD_PAGE_URL + mod_id
             )
 
             view.add_item(check_button)
             view.add_item(delete_button)
 
-        if workshop_scarper.dependencies:
+        if workshop_scraper.dependencies:
             dependency_content = ""
 
             for (
                 dependency_id,
                 dependency_details,
-            ) in workshop_scarper.dependencies.items():
+            ) in workshop_scraper.dependencies.items():
                 dependency_content += "{}\n".format(dependency_details["name"])
 
             embed.add_field(
@@ -402,7 +402,7 @@ class ModsActiveMessages:
 
     def make_mod_search_message(self, search_query):
         # Get mod details
-        workshop_scarper = WorkshopModSearchWebsiteScarper(search_query)
+        workshop_scraper = WorkshopModSearchWebsiteScraper(search_query)
 
         # Create Discord embed for better formatting
         embed = discord.Embed(
@@ -415,7 +415,7 @@ class ModsActiveMessages:
         view = View(timeout=None)
 
         # Create buttons
-        for idx, mod in enumerate(workshop_scarper):
+        for idx, mod in enumerate(workshop_scraper):
             add_button = Button(
                 style=discord.ButtonStyle.blurple,
                 label="{}. {}".format(idx + 1, mod["name"]),
@@ -433,7 +433,7 @@ class ModsActiveMessages:
 
             view.add_item(add_button)
 
-        if workshop_scarper:
+        if workshop_scraper:
             embed.description = "Search results for **{}**:".format(search_query)
         else:
             embed.discription = "No mods found for **{}**.".format(search_query)
