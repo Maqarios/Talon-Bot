@@ -127,7 +127,7 @@ class UserDatabaseManager:
     def get_users_for_active_message(self):
         conn, cursor = self.get_connection()
         cursor.execute(
-            "SELECT discord_displayname, status, team, joined FROM users ORDER BY joined"
+            "SELECT discord_id, status, team, joined FROM users ORDER BY joined"
         )
         users = cursor.fetchall()
         conn.close()

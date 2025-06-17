@@ -97,6 +97,18 @@ def set_active_messages_id(activemessagesids_path, entry, messages_id=None):
         json.dump(data, file, indent=4)
 
 
+def format_mos(user_roles, mos_roles):
+    user_mos_roles = []
+    for user_role in user_roles:
+        if user_role.name in mos_roles:
+            user_mos_roles.append(user_role.name)
+
+    if not user_mos_roles:
+        return ""
+
+    return "[{}]".format(", ".join(user_mos_roles))
+
+
 def format_time_elapsed(date_str):
     # Parse YYYY-MM-DD format
     date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()

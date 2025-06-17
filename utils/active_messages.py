@@ -14,6 +14,7 @@ from utils.utils import (
     get_server_utilization,
     get_active_messages_id,
     set_active_messages_id,
+    format_mos,
     format_time_elapsed,
     add_mod_to_serverconfig,
     update_mod_version_in_serverconfig,
@@ -174,27 +175,28 @@ async def create_or_update_teams_members_status_message(
 
     # Group users by team
     teams = {team: [] for team in config.TEAMS}
-    for user_displayname, user_status, user_team, user_joined in users:
-        if (
-            user_status == "Active"
-            and user_team in config.TEAMS
-            and user_team != "Red Talon"
-        ):
-            teams[user_team].append((user_displayname, user_joined))
+    for user_id, user_status, user_team, user_joined in users:
+        if user_status == "Active" and user_team in config.TEAMS:
+            teams[user_team].append((user_id, user_joined))
 
     # Add each team as a field in the embed
     for team_name, members in teams.items():
 
-        # Join member names with newlines
-        member_list = "\n".join(
-            [
-                f"• {member} ({format_time_elapsed(joined)})"
-                for member, joined in members
-            ]
-        )
+        member_list = ""
+        for member_id, joined in members:
+            user = bot.get_user(member_id)
+            member = await bot.guilds[0].fetch_member(member_id)
+
+            display_name = user.display_name
+            user_roles = member.roles
+
+            member_list += (
+                f"• {display_name} {format_mos(user_roles, config.MOS_ROLES)} "
+                f"({format_time_elapsed(joined)})\n"
+            )
 
         # If no members, set to "No members"
-        if not member_list:
+        if not members:
             member_list = "No members"
 
         # Add the team to the embed
