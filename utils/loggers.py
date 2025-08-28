@@ -1,28 +1,52 @@
 import logging
-import os
+from logging.handlers import RotatingFileHandler
+import sys
+from typing import Optional
 
 import config
 
-log_path = config.LOG_PATH
 
-# Create logger
-LOGGER = logging.getLogger("talonbot")
-LOGGER.setLevel(logging.DEBUG)
+def configure_logging(
+    *,
+    level: int = logging.INFO,
+    log_file: str = config.LOG_PATH,
+    max_bytes: int = 2_000_000,
+    backup_count: int = 3,
+    fmt: str = config.LOG_FORMAT,
+) -> None:
+    """
+    Configure root logging once. Safe to call multiple times (no duplicate handlers).
+    """
+    root = logging.getLogger()
+    root.setLevel(level)
 
-# Create formatter
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    # If already configured, don't add handlers again
+    if getattr(root, "_talon_configured", False):
+        return
 
-# Console handler
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
-console_handler.setFormatter(formatter)
+    formatter = logging.Formatter(fmt)
 
-# File handler
-file_handler = logging.FileHandler(log_path, mode="a")
-file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(formatter)
+    # Console
+    console = logging.StreamHandler(stream=sys.stdout)
+    console.setLevel(level)
+    console.setFormatter(formatter)
 
-# Attach handlers only once (avoid duplicates on reloads)
-if not LOGGER.handlers:
-    LOGGER.addHandler(console_handler)
-    LOGGER.addHandler(file_handler)
+    # Rotating file
+    file_handler = RotatingFileHandler(
+        log_file, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"
+    )
+    file_handler.setLevel(logging.DEBUG)  # keep DEBUG in file
+    file_handler.setFormatter(formatter)
+
+    root.addHandler(console)
+    root.addHandler(file_handler)
+
+    # mark as configured to prevent duplication
+    root._talon_configured = True  # type: ignore[attr-defined]
+
+
+def get_logger(name: Optional[str] = None) -> logging.Logger:
+    """
+    Per-module logger. Use get_logger(__name__) in your modules.
+    """
+    return logging.getLogger(name if name else "talonbot")
