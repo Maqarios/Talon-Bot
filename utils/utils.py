@@ -12,6 +12,7 @@ from utils.loggers import get_logger
 log = get_logger(__name__)
 
 
+# Check if a specific port is listening (i.e. gameserver)
 def is_port_listening(port=2001):
     try:
         if not (1 <= port <= 65535):
@@ -27,7 +28,9 @@ def is_port_listening(port=2001):
 
         if result.returncode != 0:
             log.error(
-                f"ss command failed with return code {result.returncode}: {result.stderr.strip()}"
+                "ss command failed with return code {}: {}".format(
+                    result.returncode, result.stderr.strip()
+                )
             )
             return False
 
@@ -57,7 +60,7 @@ def get_server_utilization():
         return cpu, memory, disk
 
     except Exception as e:
-        log.error(f"Error getting server utilization via psutil: {e}")
+        log.error("Error getting server utilization via psutil: {}".format(e))
 
         # Fallback to subprocess method if psutil fails
         try:
@@ -110,7 +113,9 @@ def restart_gameserver():
 
         if result.returncode != 0:
             log.error(
-                f"ss command failed with return code {result.returncode}: {result.stderr.strip()}"
+                "Failed to restart gameserver, bash script returned {}: {}".format(
+                    result.returncode, result.stderr.strip()
+                )
             )
             return False
 
@@ -133,6 +138,36 @@ def update_gameserver():
     subprocess.run(
         ["bash", os.path.expanduser("~/Desktop/ArmaR/install_or_update.sh")], check=True
     )
+
+    try:
+        result = subprocess.run(
+            ["bash", os.path.expanduser("~/Desktop/ArmaR/install_or_update.sh")],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=120,
+        )
+
+        if result.returncode != 0:
+            log.error(
+                "Failed to update gameserver, bash script returned {}: {}".format(
+                    result.returncode, result.stderr.strip()
+                )
+            )
+            return False
+
+        log.info("Gameserver updated successfully.")
+        return True
+
+    except subprocess.TimeoutExpired:
+        log.error("ss command timed out")
+        return False
+    except subprocess.CalledProcessError as e:
+        log.error("ss command failed: {}".format(e))
+        return False
+    except Exception as e:
+        log.error("Unexpected error updating gameserver: {}".format(e))
+        return False
 
 
 def get_active_messages_id(activemessagesids_path, entry):
