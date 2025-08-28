@@ -49,4 +49,4 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
     """
     Per-module logger. Use get_logger(__name__) in your modules.
     """
-    return logging.getLogger(name if name else "talonbot")
+    return logging.getLogger(name if name else "Talon Bot")

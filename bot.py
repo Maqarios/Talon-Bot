@@ -6,6 +6,7 @@ import discord
 from discord.ext import commands
 
 import config
+from utils import configure_logging, get_logger
 from utils.utils import (
     send_embed,
     add_player_to_playersgroups,
@@ -61,9 +62,9 @@ class TalonBot(commands.Bot):
         try:
             synced = await bot.tree.sync()
             for command in synced:
-                print(f"✅ Synced slash command: {command.name}")
+                log.info(f"✅ Synced slash command: {command.name}")
         except Exception as e:
-            print(f"❌ Failed to sync slash commands: {e}")
+            log.error(f"❌ Failed to sync slash commands: {e}")
 
         # Set up signal handlers
         for sig in (signal.SIGINT, signal.SIGTERM):
@@ -72,7 +73,7 @@ class TalonBot(commands.Bot):
             )
 
     async def on_ready(self):
-        print(f"✅ Logged in as {bot.user} (ID: {self.user.id})")
+        log.info(f"✅ Logged in as {bot.user} (ID: {self.user.id})")
 
         # Set up active messages
         await create_or_update_teams_members_status_message(
@@ -101,7 +102,7 @@ class TalonBot(commands.Bot):
                 "Unassigned",
                 "User has rejoined the server",
             )
-            print(f"{user.display_name} is already registered.")
+            log.info(f"{user.display_name} is already registered.")
         # register the user in the database
         else:
             USERS_DBM.create(user.id, user.name, user.display_name)
@@ -111,7 +112,7 @@ class TalonBot(commands.Bot):
                 "Unassigned",
                 "User has joined the server",
             )
-            print(f"Registered {user.display_name} in the database.")
+            log.info(f"Registered {user.display_name} in the database.")
 
         # Update the status message
         await create_or_update_teams_members_status_message(
@@ -279,7 +280,7 @@ class TalonBot(commands.Bot):
             )
 
     async def shutdown(self):
-        print("Shutdown initiated")
+        log.info("Shutdown initiated")
 
         # Shutdown database connections
         # TODO: Implement database shutdown logic
@@ -303,10 +304,13 @@ async def main():
     try:
         await bot.start(config.BOT_TOKEN)
     except Exception as e:
-        print(f"Bot crashed with exception: {e}")
+        log.error(f"Bot crashed with exception: {e}")
         return 1
     return 0
 
 
 if __name__ == "__main__":
+    configure_logging(level=10)
+    log = get_logger(__name__)
+
     sys.exit(asyncio.run(main()))

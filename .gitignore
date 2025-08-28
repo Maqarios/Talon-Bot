@@ -3,6 +3,9 @@
 __pycache__/
 */__pycache__/
 
+# Remove logs directory
+logs/
+
 # Remove database directory
 dbs/
 
