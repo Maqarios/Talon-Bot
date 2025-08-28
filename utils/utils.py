@@ -379,3 +379,12 @@ def get_channel(bot, channel_id):
     except discord.Forbidden:
         print(f"Permission denied to access channel {channel_id}.")
         return None
+
+
+async def send_embed(channel, title=None, description=None, color=discord.Color.blue()):
+    embed = discord.Embed(title=title, description=description, color=color)
+
+    try:
+        await channel.send(embed=embed)
+    except Exception as e:
+        print(f"Failed to send embed message: {e}")

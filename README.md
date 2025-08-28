@@ -19,8 +19,9 @@ This Discord bot is designed to enhance the Arma Reforger community experience b
     -   Track active mods.
 
 -   **Team Management:**
-    -   Assign users to different teams with corresponding Discord roles.
+    -   Monitor user team changes passively through Discord role assignments.
     -   Display team compositions and member join dates.
+    -   Track team assignment history and logs.
 
 -   **Configuration:**
     -   Easily configurable through a `config.py` file.
@@ -82,13 +83,13 @@ DiscordBot/
     -   `/register`: Registers the user in the database.
     -   `/register_user`: Registers a specified user in the database (Admin only).
     -   `/delete_user`: Deletes a specified user from the database (Admin only).
-    -   `/add_misconduct`: Adds a misconduct record for a user (Admin only).
-    -   `/show_misconducts`: Shows the misconduct logs for a specified user (Admin only).
-    -   `/change_user_team`: Changes a user's team (Admin only).
     -   `/show_user_team_logs`: Shows a user's team logs (Admin only).
     -   `/link_user_bohemia_id`: Links a Bohemia ID to a user (Admin only).
     -   `/certify_user_as_gm`: Certifies a user as a GM (Admin only).
     -   `/uncertify_user_as_gm`: Removes GM certification from a user (Admin only).
+-   **MisconductCog:** Handles misconduct logging and management.
+    -   `/add_misconduct`: Adds a misconduct record for a user (Admin only).
+    -   `/show_misconducts`: Shows the misconduct logs for a specified user (Admin only).
 -   **MiscCog:** Includes general utility commands such as `ping`, `privacy`, `restart_gameserver`, and `update_gameserver`.
     -   `/ping`: Checks the bot's latency.
     -   `/privacy`: Displays the privacy policy.

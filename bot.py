@@ -6,6 +6,11 @@ import discord
 from discord.ext import commands
 
 import config
+from utils.utils import (
+    send_embed,
+    add_player_to_playersgroups,
+    remove_player_from_playersgroups,
+)
 from utils.database_managers import (
     USERS_DBM,
     ROLE_LOGS_DBM,
@@ -114,11 +119,12 @@ class TalonBot(commands.Bot):
         )
 
     async def on_member_update(self, before, after):
+        member = after
+        guild = member.guild
+        user_bohemia_id = USERS_DBM.read_bohemia_id(member.id)
+
         # Check if the member has agreed to the rules
         if before.pending and not after.pending:
-            member = after
-            guild = member.guild
-
             old_team = USERS_DBM.read_team(member.id)
             role = guild.get_role(1350899518773919908)
             await member.add_roles(role)
@@ -132,6 +138,59 @@ class TalonBot(commands.Bot):
                 "Green Team",
                 "User joined himself/herself as a Green Team member",
             )
+
+        # Check for role changes
+        if before.roles != after.roles:
+            added_roles = [role for role in after.roles if role not in before.roles]
+            removed_roles = [role for role in before.roles if role not in after.roles]
+
+            for role in added_roles:
+                await send_embed(
+                    channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
+                    title="Role Assigned",
+                    description=f"User {member.display_name} has been given the {role.name} role.",
+                    color=discord.Color.green(),
+                )
+
+                # Update team if the role is in TEAMS_ROLES
+                if role.name in config.TEAMS_ROLES:
+                    if not user_bohemia_id:
+                        await send_embed(
+                            channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
+                            title="User Bohemia ID Missing",
+                            description=f"User {member.display_name} does not have a Bohemia ID.",
+                            color=discord.Color.red(),
+                        )
+
+                    add_player_to_playersgroups(
+                        config.PLAYERSGROUPS_PATH,
+                        config.TEAMS_ROLES[role.name][1],
+                        user_bohemia_id,
+                    )
+
+            for role in removed_roles:
+                await send_embed(
+                    channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
+                    title="Role Removed",
+                    description=f"User {member.display_name} has been removed from the {role.name} role.",
+                    color=discord.Color.red(),
+                )
+
+                # Update team if the role is in TEAMS_ROLES
+                if role.name in config.TEAMS_ROLES:
+                    if not user_bohemia_id:
+                        await send_embed(
+                            channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
+                            title="User Bohemia ID Missing",
+                            description=f"User {member.display_name} does not have a Bohemia ID.",
+                            color=discord.Color.red(),
+                        )
+
+                    remove_player_from_playersgroups(
+                        config.PLAYERSGROUPS_PATH,
+                        config.TEAMS_ROLES[role.name][1],
+                        user_bohemia_id,
+                    )
 
     async def on_member_remove(self, user):
         USERS_DBM.update_status(user.id, "Inactive")

@@ -80,65 +80,6 @@ class UserCog(commands.Cog):
             f"Deleted {user.name} from the database.", ephemeral=True
         )
 
-    # Slash Command: /change_user_team
-    @app_commands.command(name="change_user_team", description="Change a user's team")
-    @app_commands.describe(
-        user="The user to change team for", new_team="The new team to assign"
-    )
-    @discord.app_commands.choices(
-        new_team=[
-            discord.app_commands.Choice(name=team, value=team)
-            for team in config.TEAMS.keys()
-        ]
-    )
-    async def change_user_team(
-        self,
-        interaction: discord.Interaction,
-        user: discord.User,
-        new_team: str,
-    ):
-        if interaction.user.id not in config.ADMIN_IDS:
-            await interaction.response.send_message(
-                "You don't have permission to use this command.", ephemeral=True
-            )
-            return
-
-        await interaction.response.defer(thinking=True, ephemeral=True)
-
-        old_team = USERS_DBM.read_team(user.id)
-        old_role = interaction.guild.get_role(config.TEAMS[old_team])
-        new_role = interaction.guild.get_role(config.TEAMS[new_team])
-
-        if old_team == "Red Talon":
-            await interaction.edit_original_response(
-                content="User is a Red Talon. User can't be demoted!"
-            )
-            return
-
-        try:
-            await user.remove_roles(old_role)
-            await user.add_roles(new_role)
-        except discord.Forbidden:
-            await interaction.edit_original_response(
-                content="I cannot add/remove roles from this user."
-            )
-            return
-
-        USERS_DBM.update_team(user.id, new_team)
-        USERS_DBM.reset_joined(user.id)
-        ROLE_LOGS_DBM.create(
-            interaction.user.id,
-            user.id,
-            new_team,
-            "User was assigned a new team by admin",
-        )
-        await create_or_update_teams_members_status_message(
-            self.bot, config.CHANNEL_IDS["Stats"], USERS_DBM
-        )
-        await interaction.edit_original_response(
-            content=f"Updated {user.name}'s team to {new_team}."
-        )
-
     # Slash Command: /show_user_team_logs
     @app_commands.command(
         name="show_user_team_logs", description="Show a user's team logs"
