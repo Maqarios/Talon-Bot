@@ -70,6 +70,7 @@ DiscordBot/
 │   ├── database_managers.py# Database management classes
 │   ├── active_messages.py  # Logic for updating active status messages
 │   ├── file_watchers.py    # File monitoring for server configuration
+│   ├── loggers.py          # Logging configuration and setup
 │   └── cache.py            # Caching mechanisms
 ├── dbs/                    # Database files (not tracked by Git)
 ├── .gitignore              # Specifies intentionally untracked files
@@ -107,6 +108,7 @@ DiscordBot/
 -   **Database Managers:** Provides classes for interacting with the SQLite database, including user management, role logs, and misconduct logs.
 -   **Active Messages:** Manages and updates Discord messages that display dynamic information, such as server status and team compositions.
 -   **File Watchers:** Monitors server configuration files for changes and automatically updates bot settings.
+-   **Loggers:** Centralized logging configuration with both console and file output for debugging and monitoring.
 -   **Cache:** Caching mechanisms for storing and quickly accessing data, such as Bohemia IDs.
 
 ## Contributing
