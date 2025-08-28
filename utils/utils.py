@@ -6,12 +6,44 @@ from pathlib import Path
 
 import discord
 
+from utils.loggers import get_logger
+
+log = get_logger(__name__)
+
 
 def is_port_listening(port=2001):
-    result = subprocess.run(
-        ["ss", "-tuln", f"sport = :{port}"], capture_output=True, text=True
-    )
-    return any(f":{port}" in line for line in result.stdout.splitlines())
+    try:
+        if not (1 <= port <= 65535):
+            raise ValueError("Port number must be between 1 and 65535")
+
+        result = subprocess.run(
+            ["ss", "-tuln", f"sport = :{port}"],
+            capture_output=True,
+            text=True,
+            check=False,  # don't raise CalledProcessError automatically
+            timeout=5,  # prevent hanging
+        )
+
+        if result.returncode != 0:
+            log.error(
+                f"ss command failed with return code {result.returncode}: {result.stderr.strip()}"
+            )
+            return False
+
+        return any(f":{port}" in line for line in result.stdout.splitlines())
+
+    except ValueError as e:
+        log.error("Invalid port {}: {}".format(port, e))
+        return False
+    except subprocess.TimeoutExpired:
+        log.error("ss command timed out")
+        return False
+    except subprocess.CalledProcessError as e:
+        log.error("ss command failed: {}".format(e))
+        return False
+    except Exception as e:
+        log.error("Unexpected error checking port {}: {}".format(port, e))
+        return False
 
 
 # CPU and memory usage
