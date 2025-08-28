@@ -21,8 +21,8 @@ def is_port_listening(port=2001):
             ["ss", "-tuln", f"sport = :{port}"],
             capture_output=True,
             text=True,
-            check=False,  # don't raise CalledProcessError automatically
-            timeout=5,  # prevent hanging
+            check=False,
+            timeout=5,
         )
 
         if result.returncode != 0:
@@ -55,6 +55,7 @@ def get_server_utilization():
         disk = psutil.disk_usage("/").percent
 
         return cpu, memory, disk
+
     except Exception as e:
         log.error(f"Error getting server utilization via psutil: {e}")
 
@@ -98,7 +99,33 @@ def get_server_utilization():
 
 # Restart the gameserver
 def restart_gameserver():
-    subprocess.run(["sudo", "systemctl", "restart", "arma-reforger-server"], check=True)
+    try:
+        result = subprocess.run(
+            ["sudo", "systemctl", "restart", "arma-reforger-server"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+
+        if result.returncode != 0:
+            log.error(
+                f"ss command failed with return code {result.returncode}: {result.stderr.strip()}"
+            )
+            return False
+
+        log.info("Gameserver restarted successfully.")
+        return True
+
+    except subprocess.TimeoutExpired:
+        log.error("ss command timed out")
+        return False
+    except subprocess.CalledProcessError as e:
+        log.error("ss command failed: {}".format(e))
+        return False
+    except Exception as e:
+        log.error("Unexpected error restarting gameserver: {}".format(e))
+        return False
 
 
 # Update the gameserver
