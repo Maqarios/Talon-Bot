@@ -89,10 +89,11 @@ DiscordBot/
     -   `/link_user_bohemia_id`: Links a Bohemia ID to a user (Admin only).
     -   `/certify_user_as_gm`: Certifies a user as a GM (Admin only).
     -   `/uncertify_user_as_gm`: Removes GM certification from a user (Admin only).
--   **MiscCog:** Includes general utility commands such as `ping`, `privacy`, and `restart_gameserver`.
+-   **MiscCog:** Includes general utility commands such as `ping`, `privacy`, `restart_gameserver`, and `update_gameserver`.
     -   `/ping`: Checks the bot's latency.
     -   `/privacy`: Displays the privacy policy.
     -   `/restart_gameserver`: Restarts the game server (Admin only).
+    -   `/update_gameserver`: Updates the game server (Admin only).
 -   **ServerConfigCog:** Allows administrators to change server settings like the scenario ID.
     -   `/change_scenario`: Changes the server scenario (Admin only).
 -   **MosCog:** MOS related commands for loadout management.

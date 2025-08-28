@@ -6,6 +6,7 @@ from discord.ext import commands
 
 import config
 from utils.utils import restart_gameserver as restart_gameserver_util
+from utils.utils import update_gameserver as update_gameserver_util
 
 
 class MiscCog(commands.Cog):
@@ -92,6 +93,28 @@ class MiscCog(commands.Cog):
         except subprocess.CalledProcessError as e:
             await interaction.response.send_message(
                 f"Failed to restart the game server: {e}", ephemeral=True
+            )
+
+    # Slash Command: /update_gameserver
+    @app_commands.command(
+        name="update_gameserver", description="Update the game server."
+    )
+    async def update_gameserver(self, interaction: discord.Interaction):
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        # Acknowledge the command
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
+        try:
+            update_gameserver_util()
+            await interaction.edit_original_response(content="Game server is updated.")
+        except subprocess.CalledProcessError as e:
+            await interaction.edit_original_response(
+                content=f"Failed to update the game server: {e}"
             )
 
 

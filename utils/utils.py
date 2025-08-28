@@ -1,3 +1,4 @@
+import os
 import subprocess
 import json
 from datetime import datetime, date
@@ -42,6 +43,13 @@ def get_server_utilization():
 # Restart the gameserver
 def restart_gameserver():
     subprocess.run(["sudo", "systemctl", "restart", "arma-reforger-server"], check=True)
+
+
+# Update the gameserver
+def update_gameserver():
+    subprocess.run(
+        ["bash", os.path.expanduser("~/Desktop/ArmaR/install_or_update.sh")], check=True
+    )
 
 
 def get_active_messages_id(activemessagesids_path, entry):
