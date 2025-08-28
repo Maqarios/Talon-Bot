@@ -14,6 +14,21 @@ log = get_logger(__name__)
 
 # Check if a specific port is listening (i.e. gameserver)
 def is_port_listening(port=2001):
+    """
+    Check if a given TCP/UDP port is currently listening on the local machine.
+
+    Args:
+        port (int, optional): The port number to check. Must be between 1 and 65535. Defaults to 2001.
+
+    Returns:
+        bool: True if the port is listening, False otherwise.
+
+    Raises:
+        ValueError: If the port number is not within the valid range.
+
+    Logs:
+        Errors and exceptions encountered during execution are logged using the `log` object.
+    """
     try:
         if not (1 <= port <= 65535):
             raise ValueError("Port number must be between 1 and 65535")
@@ -52,6 +67,20 @@ def is_port_listening(port=2001):
 
 # CPU, Memory and Disk Usage
 def get_server_utilization():
+    """
+    Retrieves the current server utilization statistics for CPU, memory, and disk usage.
+
+    Attempts to use the `psutil` library for accurate readings. If `psutil` fails,
+    falls back to using shell commands via `subprocess` to obtain the metrics.
+
+    Returns:
+        tuple: A tuple containing three floats:
+            - cpu (float): CPU usage percentage.
+            - memory (float): Memory usage percentage.
+            - disk (float): Disk usage percentage.
+
+    Logs errors if unable to retrieve any of the metrics, and returns 0.0 for failed readings.
+    """
     try:
         cpu = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory().percent
@@ -102,6 +131,15 @@ def get_server_utilization():
 
 # Restart the gameserver
 def restart_gameserver():
+    """
+    Attempts to restart the Arma Reforger game server using systemctl.
+
+    Executes the command 'sudo systemctl restart arma-reforger-server' with a timeout of 5 seconds.
+    Logs errors if the restart fails, times out, or encounters unexpected exceptions.
+
+    Returns:
+        bool: True if the server was restarted successfully, False otherwise.
+    """
     try:
         result = subprocess.run(
             ["sudo", "systemctl", "restart", "arma-reforger-server"],
@@ -135,6 +173,15 @@ def restart_gameserver():
 
 # Update the gameserver
 def update_gameserver():
+    """
+    Updates the gameserver by executing a bash script.
+
+    Runs the install_or_update.sh script located in the user's Desktop/ArmaR directory.
+    Logs errors if the script fails, times out, or encounters unexpected exceptions.
+
+    Returns:
+        bool: True if the update was successful, False otherwise.
+    """
     subprocess.run(
         ["bash", os.path.expanduser("~/Desktop/ArmaR/install_or_update.sh")], check=True
     )
