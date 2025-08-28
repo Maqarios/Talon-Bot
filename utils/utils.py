@@ -3,6 +3,7 @@ import subprocess
 import json
 from datetime import datetime, date
 from pathlib import Path
+import psutil
 
 import discord
 
@@ -46,30 +47,53 @@ def is_port_listening(port=2001):
         return False
 
 
-# CPU and memory usage
+# CPU, Memory and Disk Usage
 def get_server_utilization():
-    # Get CPU, memory, and disk usage
-    cpu = float(
-        subprocess.check_output(
-            "top -bn1 | grep 'Cpu(s)' | awk '{print $2}'", shell=True
-        )
-        .decode()
-        .strip()
-    )
-    memory = float(
-        subprocess.check_output(
-            "free -m | grep Mem | awk '{print $3/$2 * 100.0}'", shell=True
-        )
-        .decode()
-        .strip()
-    )
-    disk = float(
-        subprocess.check_output("df -h / | awk 'NR==2 {print $5}'", shell=True)
-        .decode()
-        .strip()[:-1]
-    )
+    try:
+        cpu = psutil.cpu_percent(interval=1)
+        memory = psutil.virtual_memory().percent
+        disk = psutil.disk_usage("/").percent
 
-    return cpu, memory, disk
+        return cpu, memory, disk
+    except Exception as e:
+        log.error(f"Error getting server utilization via psutil: {e}")
+
+        # Fallback to subprocess method if psutil fails
+        try:
+            cpu = float(
+                subprocess.check_output(
+                    "top -bn1 | grep 'Cpu(s)' | awk '{print $2}'", shell=True
+                )
+                .decode()
+                .strip()
+            )
+        except Exception as e:
+            log.error(f"Error getting CPU usage via subprocess: {e}")
+            cpu = 0.0
+
+        try:
+            memory = float(
+                subprocess.check_output(
+                    "free -m | grep Mem | awk '{print $3/$2 * 100.0}'", shell=True
+                )
+                .decode()
+                .strip()
+            )
+        except Exception as e:
+            log.error(f"Error getting memory usage via subprocess: {e}")
+            memory = 0.0
+
+        try:
+            disk = float(
+                subprocess.check_output("df -h / | awk 'NR==2 {print $5}'", shell=True)
+                .decode()
+                .strip()[:-1]
+            )
+        except Exception as e:
+            log.error(f"Error getting disk usage via subprocess: {e}")
+            disk = 0.0
+
+        return cpu, memory, disk
 
 
 # Restart the gameserver
