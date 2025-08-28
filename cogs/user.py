@@ -103,18 +103,26 @@ class UserCog(commands.Cog):
             )
             return
 
+        await interaction.response.defer(thinking=True, ephemeral=True)
+
         old_team = USERS_DBM.read_team(user.id)
         old_role = interaction.guild.get_role(config.TEAMS[old_team])
         new_role = interaction.guild.get_role(config.TEAMS[new_team])
 
         if old_team == "Red Talon":
-            await interaction.response.send_message(
-                "User is a Red Talon. User can't be demoted!", ephemeral=True
+            await interaction.edit_original_response(
+                content="User is a Red Talon. User can't be demoted!"
             )
             return
 
-        await user.remove_roles(old_role)
-        await user.add_roles(new_role)
+        try:
+            await user.remove_roles(old_role)
+            await user.add_roles(new_role)
+        except discord.Forbidden:
+            await interaction.edit_original_response(
+                content="I cannot add/remove roles from this user."
+            )
+            return
 
         USERS_DBM.update_team(user.id, new_team)
         USERS_DBM.reset_joined(user.id)
@@ -127,8 +135,8 @@ class UserCog(commands.Cog):
         await create_or_update_teams_members_status_message(
             self.bot, config.CHANNEL_IDS["Stats"], USERS_DBM
         )
-        await interaction.response.send_message(
-            f"Updated {user.name}'s team to {new_team}.", ephemeral=True
+        await interaction.edit_original_response(
+            content=f"Updated {user.name}'s team to {new_team}."
         )
 
     # Slash Command: /show_user_team_logs
@@ -247,7 +255,7 @@ class UserCog(commands.Cog):
         remove_player_from_playersgroups(
             config.PLAYERSGROUPS_PATH, "certifiedGMs", user_bohemia_id
         )
-        
+
         await user.remove_roles(gm_role)
         await interaction.response.send_message(
             f"User {user.name} has been uncertified as a GM.", ephemeral=True
