@@ -10,8 +10,8 @@ def configure_logging(
     *,
     level: int = logging.INFO,
     log_file: str = config.LOG_PATH,
-    max_bytes: int = 2_000_000,
-    backup_count: int = 3,
+    max_bytes: int = 5_000_000,
+    backup_count: int = 5,
     fmt: str = config.LOG_FORMAT,
 ) -> None:
     """
@@ -21,7 +21,7 @@ def configure_logging(
     root.setLevel(level)
 
     # If already configured, don't add handlers again
-    if getattr(root, "_talon_configured", False):
+    if getattr(root, "_logger_configured", False):
         return
 
     formatter = logging.Formatter(fmt)
