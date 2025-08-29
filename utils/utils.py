@@ -64,7 +64,7 @@ def is_port_listening(port=2001):
         return False
 
 
-# CPU, Memory and Disk Usage
+# CPU, Memory and Disk usage
 def get_server_utilization():
     """
     Retrieves the current server utilization statistics for CPU, memory, and disk usage.
@@ -374,6 +374,7 @@ def list_active_players(serverstats_path):
     return active_players
 
 
+# Add player bohemia id to a given group (Green, Chalk, ...)
 def add_player_to_playersgroups(playersgroups_path, group_name, value):
     """
     Adds a player to a specified group in a JSON file containing player groups.
@@ -413,6 +414,7 @@ def add_player_to_playersgroups(playersgroups_path, group_name, value):
     log.info(f"Player {value} added to group {group_name} in {path}.")
 
 
+# Remove player bohemia id from a given group (Green, Chalk, ...)
 def remove_player_from_playersgroups(playersgroups_path, group_name, value):
     """
     Removes a player from a specified group in a JSON file containing player groups.
