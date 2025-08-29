@@ -1,10 +1,11 @@
 import os
 import subprocess
 import json
+import time
 from datetime import datetime, date
 from pathlib import Path
-import psutil
 
+import psutil
 import discord
 
 from utils.loggers import get_logger
@@ -380,56 +381,80 @@ def list_active_players(serverstats_path):
 
 
 def add_player_to_playersgroups(playersgroups_path, group_name, value):
-    # Check if the file exists
-    if not Path(playersgroups_path).is_file():
-        print(f"File {playersgroups_path} does not exist. Creating a new file.")
+    """
+    Adds a player to a specified group in a JSON file containing player groups.
 
-        # Create the file if it doesn't exist
-        with open(playersgroups_path, "w") as file:
-            json.dump({}, file, indent=4)
+    If the file does not exist, it will be created. If the file contains invalid JSON,
+    it will be backed up and a new file will be created. The function ensures that the
+    player is not added to the group more than once.
 
-        raise FileNotFoundError(
-            f"File {playersgroups_path} does not exist. A new file has been created."
-        )
+    Args:
+        playersgroups_path (str or Path): Path to the JSON file storing player groups.
+        group_name (str): The name of the group to add the player to.
+        value (Any): The player value to add to the group.
 
-    # Read the JSON file
-    data = {}
-    with open(playersgroups_path, "r") as file:
-        data = json.load(file)
+    Raises:
+        OSError: If there is an error reading or writing the file.
+    """
+    path = Path(playersgroups_path)
 
-    if group_name not in data:
-        data[group_name] = []
+    try:
+        with path.open("r") as file:
+            data = json.load(file)
+    except FileNotFoundError:
+        log.error(f"File {path} does not exist. Creating a new one.")
+        data = {}
+    except json.JSONDecodeError:
+        log.error(f"File {path} is not a valid JSON. Creating a new one.")
+        backup_path = path.with_suffix(f"{path.suffix}.{int(time.time())}.bak")
+        os.rename(path, backup_path)
+        data = {}
 
-    if value not in data[group_name]:
-        data[group_name].append(value)
+    if value not in data.get(group_name, []):
+        data.setdefault(group_name, []).append(value)
 
-    with open(playersgroups_path, "w") as file:
+    with path.open("w") as file:
         json.dump(data, file, indent=4)
+
+    log.info(f"Player {value} added to group {group_name} in {path}.")
 
 
 def remove_player_from_playersgroups(playersgroups_path, group_name, value):
-    # Check if the file exists
-    if not Path(playersgroups_path).is_file():
-        print(f"File {playersgroups_path} does not exist. Creating a new file.")
+    """
+    Removes a player from a specified group in a JSON file containing player groups.
 
-        # Create the file if it doesn't exist
-        with open(playersgroups_path, "w") as file:
-            json.dump({}, file, indent=4)
+    Args:
+        playersgroups_path (str or Path): Path to the JSON file storing player groups.
+        group_name (str): The name of the group from which to remove the player.
+        value (Any): The player value to remove from the group.
 
-        raise FileNotFoundError(
-            f"File {playersgroups_path} does not exist. A new file has been created."
-        )
+    Behavior:
+        - If the file does not exist, logs an error and creates a new empty data structure.
+        - If the file contains invalid JSON, logs an error, backs up the corrupted file, and creates a new empty data structure.
+        - Removes the specified player from the group if present.
+        - Writes the updated data back to the file.
+    """
+    path = Path(playersgroups_path)
 
-    # Read the JSON file
-    data = {}
-    with open(playersgroups_path, "r") as file:
-        data = json.load(file)
+    try:
+        with path.open("r") as file:
+            data = json.load(file)
+    except FileNotFoundError:
+        log.error(f"File {path} does not exist. Creating a new one.")
+        data = {}
+    except json.JSONDecodeError:
+        log.error(f"File {path} is not a valid JSON. Creating a new one.")
+        backup_path = path.with_suffix(f"{path.suffix}.{int(time.time())}.bak")
+        os.rename(path, backup_path)
+        data = {}
 
-    if group_name in data and value in data[group_name]:
+    if value in data.get(group_name, []):
         data[group_name].remove(value)
 
-        with open(playersgroups_path, "w") as file:
-            json.dump(data, file, indent=4)
+    with path.open("w") as file:
+        json.dump(data, file, indent=4)
+
+    log.info(f"Player {value} removed from group {group_name} in {path}.")
 
 
 def add_mod_to_serverconfig(serverconfig_path, mod_id, mod_name, mod_version):
