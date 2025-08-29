@@ -44,25 +44,23 @@ def is_port_listening(port=2001):
 
         if result.returncode != 0:
             log.error(
-                "ss command failed with return code {}: {}".format(
-                    result.returncode, result.stderr.strip()
-                )
+                f"ss command failed with return code {result.returncode}: {result.stderr.strip()}"
             )
             return False
 
         return any(f":{port}" in line for line in result.stdout.splitlines())
 
     except ValueError as e:
-        log.error("Invalid port {}: {}".format(port, e))
+        log.error(f"Invalid port {port}: {e}")
         return False
     except subprocess.TimeoutExpired:
         log.error("ss command timed out")
         return False
     except subprocess.CalledProcessError as e:
-        log.error("ss command failed: {}".format(e))
+        log.error(f"ss command failed: {e}")
         return False
     except Exception as e:
-        log.error("Unexpected error checking port {}: {}".format(port, e))
+        log.error(f"Unexpected error checking port {port}: {e}")
         return False
 
 
@@ -90,7 +88,7 @@ def get_server_utilization():
         return cpu, memory, disk
 
     except Exception as e:
-        log.error("Error getting server utilization via psutil: {}".format(e))
+        log.error(f"Error getting server utilization via psutil: {e}")
 
         # Fallback to subprocess method if psutil fails
         try:
@@ -152,9 +150,7 @@ def restart_gameserver():
 
         if result.returncode != 0:
             log.error(
-                "Failed to restart gameserver, bash script returned {}: {}".format(
-                    result.returncode, result.stderr.strip()
-                )
+                f"Failed to restart gameserver, bash script returned {result.returncode}: {result.stderr.strip()}"
             )
             return False
 
@@ -165,10 +161,10 @@ def restart_gameserver():
         log.error("ss command timed out")
         return False
     except subprocess.CalledProcessError as e:
-        log.error("ss command failed: {}".format(e))
+        log.error(f"ss command failed: {e}")
         return False
     except Exception as e:
-        log.error("Unexpected error restarting gameserver: {}".format(e))
+        log.error(f"Unexpected error restarting gameserver: {e}")
         return False
 
 
@@ -198,9 +194,7 @@ def update_gameserver():
 
         if result.returncode != 0:
             log.error(
-                "Failed to update gameserver, bash script returned {}: {}".format(
-                    result.returncode, result.stderr.strip()
-                )
+                f"Failed to update gameserver, bash script returned {result.returncode}: {result.stderr.strip()}"
             )
             return False
 
@@ -211,10 +205,10 @@ def update_gameserver():
         log.error("ss command timed out")
         return False
     except subprocess.CalledProcessError as e:
-        log.error("ss command failed: {}".format(e))
+        log.error(f"ss command failed: {e}")
         return False
     except Exception as e:
-        log.error("Unexpected error updating gameserver: {}".format(e))
+        log.error(f"Unexpected error updating gameserver: {e}")
         return False
 
 
