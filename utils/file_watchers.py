@@ -11,9 +11,41 @@ from utils.loggers import get_logger
 log = get_logger(__name__)
 
 
-class ServerAdminToolsStatsFileWatcher(FileSystemEventHandler):
+class GenericFileWatcher(FileSystemEventHandler):
     def __init__(self, filepath):
         self.filepath = filepath
+
+    def _initiate_or_reset_data(self):
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    def _load_file(self):
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    def _sanitize_data(self, data):
+        return data
+
+    def on_modified(self, event):
+        if os.path.abspath(event.src_path) == os.path.abspath(self.filepath):
+            data = self._load_file()
+            if data:
+                self._sanitize_data(data)
+            else:
+                self._initiate_or_reset_data()
+
+    def start(self):
+        observer = Observer()
+        observer.schedule(
+            self,
+            path=os.path.dirname(os.path.abspath(self.filepath)) or ".",
+            recursive=False,
+        )
+        observer.start()
+        threading.Thread(target=observer.join, daemon=True).start()
+
+
+class ServerAdminToolsStatsFileWatcher(GenericFileWatcher):
+    def __init__(self, filepath):
+        super().__init__(filepath)
 
         # Define structure of the data
         self.fields = [
@@ -75,28 +107,10 @@ class ServerAdminToolsStatsFileWatcher(FileSystemEventHandler):
             sorted(self.connected_players.items(), key=lambda x: x[1].lower())
         )
 
-    def on_modified(self, event):
-        if os.path.abspath(event.src_path) == os.path.abspath(self.filepath):
-            data = self._load_file()
-            if data:
-                self._sanitize_data(data)
-            else:
-                self._initiate_or_reset_data()
 
-    def start(self):
-        observer = Observer()
-        observer.schedule(
-            self,
-            path=os.path.dirname(os.path.abspath(self.filepath)) or ".",
-            recursive=False,
-        )
-        observer.start()
-        threading.Thread(target=observer.join, daemon=True).start()
-
-
-class ServerConfigFileWatcher(FileSystemEventHandler):
+class ServerConfigFileWatcher(GenericFileWatcher):
     def __init__(self, filepath):
-        self.filepath = filepath
+        super().__init__(filepath)
         self.game = ServerConfigGame()
 
         # Define structure of the data
@@ -145,24 +159,6 @@ class ServerConfigFileWatcher(FileSystemEventHandler):
                     self.game._sanitize_data(data[field])
                 else:
                     setattr(self, field, data[field])
-
-    def on_modified(self, event):
-        if os.path.abspath(event.src_path) == os.path.abspath(self.filepath):
-            data = self._load_file()
-            if data:
-                self._sanitize_data(data)
-            else:
-                self._initiate_or_reset_data()
-
-    def start(self):
-        observer = Observer()
-        observer.schedule(
-            self,
-            path=os.path.dirname(os.path.abspath(self.filepath)) or ".",
-            recursive=False,
-        )
-        observer.start()
-        threading.Thread(target=observer.join, daemon=True).start()
 
 
 class ServerConfigGame:

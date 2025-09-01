@@ -105,7 +105,10 @@ DiscordBot/
 
 -   **Database Managers:** Provides classes for interacting with the SQLite database, including user management, role logs, and misconduct logs.
 -   **Active Messages:** Manages and updates Discord messages that display dynamic information, such as server status and team compositions.
--   **File Watchers:** Monitors server configuration files for changes and automatically updates bot settings.
+-   **File Watchers:** Real-time monitoring system with specialized watchers:
+    -   **ServerAdminToolsStatsFileWatcher:** Monitors JSON statistics files for server performance data (FPS, uptime, player count, entities, etc.) and connected players list with automatic sorting
+    -   **ServerConfigFileWatcher:** Tracks server configuration changes including game settings, mods, scenario IDs, and network configuration with automatic data sanitization and mod searchability
+    -   **GenericFileWatcher:** Base class providing extensible file monitoring framework using watchdog library with automatic change detection and threading support
 -   **Loggers:** Centralized logging configuration with both console and file output for debugging and monitoring.
 -   **Cache:** Caching mechanisms for storing and quickly accessing data, such as Bohemia IDs.
 
