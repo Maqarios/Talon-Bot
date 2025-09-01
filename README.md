@@ -61,7 +61,7 @@ DiscordBot/
 ├── cogs/                   # Cog files for different functionalities
 │   ├── __init__.py
 │   ├── misc.py             # Miscellaneous commands (ping, privacy, restart server)
-│   ├── user.py             # User management commands (register, delete, misconduct, team management)
+│   ├── user.py             # User management and misconduct logging commands
 │   ├── serverconfig.py     # Server configuration commands (change scenario)
 │   └── mos.py              # MOS related commands (loadout management)
 ├── utils/                  # Utility modules
@@ -80,16 +80,14 @@ DiscordBot/
 
 ## Cogs
 
--   **UserCog:** Manages user registration, deletion, misconduct logging, team assignments, and GM certification.
+-   **UserCog:** Manages user registration, deletion, team assignments, and Bohemia ID linking.
     -   `/register`: Registers the user in the database.
     -   `/register_user`: Registers a specified user in the database (Admin only).
     -   `/delete_user`: Deletes a specified user from the database (Admin only).
     -   `/show_user_team_logs`: Shows a user's team logs (Admin only).
-    -   `/link_user_bohemia_id`: Links a Bohemia ID to a user (Admin only).
-    -   `/certify_user_as_gm`: Certifies a user as a GM (Admin only).
-    -   `/uncertify_user_as_gm`: Removes GM certification from a user (Admin only).
+    -   `/link_user_bohemia_id`: Links a Bohemia ID to a user with autocomplete for unknown players (Admin only).
 -   **MisconductCog:** Handles misconduct logging and management.
-    -   `/add_misconduct`: Adds a misconduct record for a user (Admin only).
+    -   `/add_misconduct`: Adds a misconduct record for a user with category/type autocomplete (Admin only).
     -   `/show_misconducts`: Shows the misconduct logs for a specified user (Admin only).
 -   **MiscCog:** Includes general utility commands such as `ping`, `privacy`, `restart_gameserver`, and `update_gameserver`.
     -   `/ping`: Checks the bot's latency.
