@@ -6,6 +6,10 @@ from pathlib import Path
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+from utils.loggers import get_logger
+
+log = get_logger(__name__)
+
 
 class ServerAdminToolsStatsFileWatcher(FileSystemEventHandler):
     def __init__(self, filepath):
@@ -51,14 +55,14 @@ class ServerAdminToolsStatsFileWatcher(FileSystemEventHandler):
 
     def _load_file(self):
         if not Path(self.filepath).is_file():
-            print(f"File {self.filepath} does not exist.")
+            log.error(f"File {self.filepath} does not exist.")
             return {}
 
         try:
             with open(self.filepath, "r") as file:
                 return json.load(file)
         except json.JSONDecodeError:
-            print(f"File {self.filepath} is not a valid JSON file.")
+            log.error(f"File {self.filepath} is not a valid JSON file.")
             return {}
 
     def _sanitize_data(self, data):
@@ -124,14 +128,14 @@ class ServerConfigFileWatcher(FileSystemEventHandler):
 
     def _load_file(self):
         if not Path(self.filepath).is_file():
-            print(f"File {self.filepath} does not exist.")
+            log.error(f"File {self.filepath} does not exist.")
             return {}
 
         try:
             with open(self.filepath, "r") as file:
                 return json.load(file)
         except json.JSONDecodeError:
-            print(f"File {self.filepath} is not a valid JSON file.")
+            log.error(f"File {self.filepath} is not a valid JSON file.")
             return {}
 
     def _sanitize_data(self, data):
