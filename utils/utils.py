@@ -14,7 +14,7 @@ log = get_logger(__name__)
 
 
 # Check if a specific port is listening (i.e. gameserver)
-def is_port_listening(port=2001):
+def is_port_listening(port: int = 2001) -> bool:
     """
     Check if a given TCP/UDP port is currently listening on the local machine.
 
@@ -65,7 +65,7 @@ def is_port_listening(port=2001):
 
 
 # CPU, Memory and Disk usage
-def get_server_utilization():
+def get_server_utilization() -> tuple[float, float, float]:
     """
     Retrieves the current server utilization statistics for CPU, memory, and disk usage.
 
@@ -129,7 +129,7 @@ def get_server_utilization():
 
 
 # Restart the gameserver
-def restart_gameserver():
+def restart_gameserver() -> bool:
     """
     Attempts to restart the Arma Reforger game server using systemctl.
 
@@ -158,10 +158,10 @@ def restart_gameserver():
         return True
 
     except subprocess.TimeoutExpired:
-        log.error("ss command timed out")
+        log.error("Gameserver restart command timed out")
         return False
     except subprocess.CalledProcessError as e:
-        log.error(f"ss command failed: {e}")
+        log.error(f"Gameserver restart command failed: {e}")
         return False
     except Exception as e:
         log.error(f"Unexpected error restarting gameserver: {e}")
@@ -169,7 +169,7 @@ def restart_gameserver():
 
 
 # Update the gameserver
-def update_gameserver():
+def update_gameserver() -> bool:
     """
     Updates the gameserver by executing a bash script.
 
@@ -179,9 +179,6 @@ def update_gameserver():
     Returns:
         bool: True if the update was successful, False otherwise.
     """
-    subprocess.run(
-        ["bash", os.path.expanduser("~/Desktop/ArmaR/install_or_update.sh")], check=True
-    )
 
     try:
         result = subprocess.run(
@@ -202,10 +199,10 @@ def update_gameserver():
         return True
 
     except subprocess.TimeoutExpired:
-        log.error("ss command timed out")
+        log.error("Gameserver update command timed out")
         return False
     except subprocess.CalledProcessError as e:
-        log.error(f"ss command failed: {e}")
+        log.error(f"Gameserver update command failed: {e}")
         return False
     except Exception as e:
         log.error(f"Unexpected error updating gameserver: {e}")
