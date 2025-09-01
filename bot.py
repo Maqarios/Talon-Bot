@@ -27,6 +27,8 @@ from utils.active_messages import (
     ModsActiveMessages,
 )
 
+from cogs.operations import OperationsCog
+
 
 class TalonBot(commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -53,6 +55,7 @@ class TalonBot(commands.Bot):
         await self.load_extension("cogs.misc")
         await self.load_extension("cogs.serverconfig")
         await self.load_extension("cogs.mos")
+        await self.load_extension("cogs.operations")
 
         # Start file watcher
         self.server_stats_file_watcher.start()
@@ -245,6 +248,14 @@ class TalonBot(commands.Bot):
 
                 # Call the update function
                 await self.mods_active_messages.handle_interaction(interaction)
+
+            # Operation related interactions
+            if interaction.channel_id == config.CHANNEL_IDS["Testing"]:
+                # Acknowledge the button press
+                await interaction.response.defer(ephemeral=True)
+
+                # Call the update function
+                await OperationsCog.handle_interaction(self, interaction)
 
     async def on_raw_reaction_add(self, payload):
         # Get information from the payload

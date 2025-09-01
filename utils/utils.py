@@ -558,6 +558,7 @@ def remove_mod_from_serverconfig(serverconfig_path, mod_id):
 def get_channel(bot, channel_id):
     try:
         channel = bot.get_channel(channel_id)
+
         return channel
     except discord.NotFound:
         print(f"Channel with ID {channel_id} not found.")
