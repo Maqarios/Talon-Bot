@@ -168,6 +168,7 @@ class ServerConfigGame:
             "name",
             "password",
             "scenarioId",
+            "maxPlayers",
             "mods",
         ]
 
@@ -177,6 +178,7 @@ class ServerConfigGame:
         self.name = ""
         self.password = ""
         self.scenarioId = ""
+        self.maxPlayers = -1
         self.mods = []
         self.searchable_mods = {}
 

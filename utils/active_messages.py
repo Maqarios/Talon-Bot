@@ -1,5 +1,6 @@
 import time
 import datetime
+import re
 
 import discord
 from discord import InteractionType
@@ -225,6 +226,7 @@ async def create_or_update_active_players_on_gameserver_status_message(
     bot,
     channel_id,
     server_stats,
+    server_config,
 ):
     # Fetch the channel
     try:
@@ -275,6 +277,8 @@ async def create_or_update_active_players_on_gameserver_status_message(
         embed.color = discord.Color.red()
     else:
         # Define the field to be added
+
+        # Players list field
         field = {"name": "", "value": "", "inline": False}
 
         if server_stats.players == -1:
@@ -282,9 +286,13 @@ async def create_or_update_active_players_on_gameserver_status_message(
             field["name"] = "Something went wrong. Contact the server administrator."
         if server_stats.players == 0:
             embed.color = discord.Color.yellow()
-            field["name"] = "No Active Players"
+            field["name"] = (
+                f"Active Players: {server_stats.players} / {server_config.game.maxPlayers}"
+            )
         else:
-            field["name"] = f"Active Players: {server_stats.players}"
+            field["name"] = (
+                f"Active Players: {server_stats.players} / {server_config.game.maxPlayers}"
+            )
             field["value"] = "\n".join(
                 [f"• {player}" for player in server_stats.connected_players.values()]
             )
@@ -298,6 +306,19 @@ async def create_or_update_active_players_on_gameserver_status_message(
                 )
 
         embed.add_field(**field)
+
+        # Server details field
+        embed.add_field(
+            name="Server Details",
+            value=(
+                f"• **Name:** {server_config.game.name}\n"
+                f"• **Scenario:** {(' ').join(re.findall(r'[A-Z]+(?![a-z])|[A-Z][a-z]*', server_config.game.scenarioId.split('/')[-1].split('.')[0]))}\n"
+                f"• **IP:** {server_config.publicAddress}\n"
+                f"• **Port:** {server_config.publicPort}\n"
+                f"• **Uptime:** {time.strftime('%H:%M:%S', time.gmtime(server_stats.uptime_seconds))}\n"
+            ),
+            inline=False,
+        )
 
     # Add footer with timestamp
     embed.set_footer(text="Last updated")

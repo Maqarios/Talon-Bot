@@ -85,6 +85,7 @@ class TalonBot(commands.Bot):
             bot=bot,
             channel_id=config.CHANNEL_IDS["Server Status"],
             server_stats=self.server_stats_file_watcher,
+            server_config=self.server_config_file_watcher,
         )
         create_or_update_server_utilization_status_message.start(
             bot=bot, channel_id=config.CHANNEL_IDS["Stats"]
