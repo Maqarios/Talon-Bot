@@ -287,11 +287,11 @@ async def create_or_update_active_players_on_gameserver_status_message(
         if server_stats.players == 0:
             embed.color = discord.Color.yellow()
             field["name"] = (
-                f"Active Players: {server_stats.players} / {server_config.game.maxPlayers}"
+                f"Players ( {server_stats.players} / {server_config.game.maxPlayers} )"
             )
         else:
             field["name"] = (
-                f"Active Players: {server_stats.players} / {server_config.game.maxPlayers}"
+                f"Players ( {server_stats.players} / {server_config.game.maxPlayers} )"
             )
             field["value"] = "\n".join(
                 [f"• {player}" for player in server_stats.connected_players.values()]
@@ -315,7 +315,7 @@ async def create_or_update_active_players_on_gameserver_status_message(
                 f"• **Scenario:** {(' ').join(re.findall(r'[A-Z]+(?![a-z])|[A-Z][a-z]*', server_config.game.scenarioId.split('/')[-1].split('.')[0]))}\n"
                 f"• **IP:** {server_config.publicAddress}\n"
                 f"• **Port:** {server_config.publicPort}\n"
-                f"• **Uptime:** {time.strftime('%H:%M:%S', time.gmtime(server_stats.uptime_seconds))}\n"
+                f"• **Uptime:** {datetime.timedelta(seconds=server_stats.uptime_seconds)}\n"
             ),
             inline=False,
         )
