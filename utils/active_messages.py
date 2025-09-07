@@ -313,6 +313,7 @@ async def create_or_update_active_players_on_gameserver_status_message(
             value=(
                 f"• **Name:** {server_config.game.name}\n"
                 f"• **Scenario:** {(' ').join(re.findall(r'[A-Z]+(?![a-z])|[A-Z][a-z]*', server_config.game.scenarioId.split('/')[-1].split('.')[0]))}\n"
+                f"• **Password:** {server_config.game.password}\n"
                 f"• **IP:** {server_config.publicAddress}\n"
                 f"• **Port:** {server_config.publicPort}\n"
                 f"• **Uptime:** {datetime.timedelta(seconds=server_stats.uptime_seconds)}\n"
