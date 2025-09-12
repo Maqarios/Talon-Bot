@@ -183,6 +183,9 @@ async def create_or_update_teams_members_status_message(
     # Add each team as a field in the embed
     for team_name, members in teams.items():
 
+        if team_name in ["Unassigned", "Green Team", "Red Talon"]:
+            continue  # Skip Unassigned and Green Team
+
         member_list = ""
         for member_id, joined in members:
             user = bot.get_user(member_id)
