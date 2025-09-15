@@ -16,7 +16,7 @@ class MosCog(commands.Cog):
         self.profile_dir_path = profile_dir_path
 
     def _get_bacon_loadout_path(self, bohemia_id):
-        return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.3/US/{bohemia_id[:2]}/{bohemia_id}"
+        return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.4/US/{bohemia_id[:2]}/{bohemia_id}"
 
     def _get_persistent_loadout_path(self, bohemia_id):
         return f"{self.profile_dir_path}/GMPersistentLoadouts/v2/US/{bohemia_id[:2]}/{bohemia_id}"
