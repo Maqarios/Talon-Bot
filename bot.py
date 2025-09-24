@@ -39,12 +39,22 @@ class TalonBot(commands.Bot):
         self.server_config_file_watcher = ServerConfigFileWatcher(
             config.SERVERCONFIG_PATH
         )
+        self.server_config_file_watcher_test = ServerConfigFileWatcher(
+            config.SERVERCONFIG_TEST_PATH
+        )
 
         # Active Messages
         self.mods_active_messages = ModsActiveMessages(
             self,
             config.CHANNEL_IDS["Mods"],
             self.server_config_file_watcher,
+            config.SERVERCONFIG_PATH,
+        )
+        self.mods_active_messages_test = ModsActiveMessages(
+            self,
+            config.CHANNEL_IDS["Mods-2"],
+            self.server_config_file_watcher_test,
+            config.SERVERCONFIG_TEST_PATH,
         )
 
     async def setup_hook(self):
@@ -57,6 +67,7 @@ class TalonBot(commands.Bot):
         # Start file watcher
         self.server_stats_file_watcher.start()
         self.server_config_file_watcher.start()
+        self.server_config_file_watcher_test.start()
 
         # Sync slash commands
         try:
@@ -91,6 +102,7 @@ class TalonBot(commands.Bot):
             bot=bot, channel_id=config.CHANNEL_IDS["Stats"]
         )
         self.mods_active_messages.create_or_update_mod_messages.start()
+        self.mods_active_messages_test.create_or_update_mod_messages.start()
 
     async def on_member_join(self, user):
         # Check if the member is already registered
@@ -147,19 +159,11 @@ class TalonBot(commands.Bot):
             removed_roles = [role for role in before.roles if role not in after.roles]
 
             for role in added_roles:
-                await send_embed(
-                    channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
-                    title="Role Assigned",
-                    description=f"User {member.display_name} has been given the {role.name} role.",
-                    color=discord.Color.green(),
-                )
-
                 # Update team if the role is in TEAMS_ROLES
                 if role.name in config.TEAMS_ROLES:
                     if not user_bohemia_id:
                         await send_embed(
                             channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
-                            title="User Bohemia ID Missing",
                             description=f"User {member.display_name} does not have a Bohemia ID.",
                             color=discord.Color.red(),
                         )
@@ -171,19 +175,11 @@ class TalonBot(commands.Bot):
                     )
 
             for role in removed_roles:
-                await send_embed(
-                    channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
-                    title="Role Removed",
-                    description=f"User {member.display_name} has been removed from the {role.name} role.",
-                    color=discord.Color.red(),
-                )
-
                 # Update team if the role is in TEAMS_ROLES
                 if role.name in config.TEAMS_ROLES:
                     if not user_bohemia_id:
                         await send_embed(
                             channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
-                            title="User Bohemia ID Missing",
                             description=f"User {member.display_name} does not have a Bohemia ID.",
                             color=discord.Color.red(),
                         )
@@ -214,6 +210,8 @@ class TalonBot(commands.Bot):
         # Mod related message
         if message.channel.id == config.CHANNEL_IDS["Mods"]:
             await self.mods_active_messages.handle_message(message)
+        elif message.channel.id == config.CHANNEL_IDS["Mods-2"]:
+            await self.mods_active_messages_test.handle_message(message)
 
     async def on_interaction(self, interaction):
         if interaction.data and "custom_id" in interaction.data:
@@ -246,6 +244,13 @@ class TalonBot(commands.Bot):
 
                 # Call the update function
                 await self.mods_active_messages.handle_interaction(interaction)
+
+            if interaction.channel_id == config.CHANNEL_IDS["Mods-2"]:
+                # Acknowledge the button press
+                await interaction.response.defer(ephemeral=True)
+
+                # Call the update function
+                await self.mods_active_messages_test.handle_interaction(interaction)
 
     async def on_raw_reaction_add(self, payload):
         # Get information from the payload

@@ -71,6 +71,7 @@ DiscordBot/
 │   ├── active_messages.py  # Logic for updating active status messages
 │   ├── file_watchers.py    # File monitoring for server configuration
 │   ├── loggers.py          # Logging configuration and setup
+│   ├── website_scrapers.py # Website scraping utilities
 │   └── cache.py            # Caching mechanisms
 ├── dbs/                    # Database files (not tracked by Git)
 ├── .gitignore              # Specifies intentionally untracked files
@@ -89,11 +90,14 @@ DiscordBot/
 -   **MisconductCog:** Handles misconduct logging and management.
     -   `/add_misconduct`: Adds a misconduct record for a user with category/type autocomplete (Admin only).
     -   `/show_misconducts`: Shows the misconduct logs for a specified user (Admin only).
--   **MiscCog:** Includes general utility commands such as `ping`, `privacy`, `restart_gameserver`, and `update_gameserver`.
+-   **MiscCog:** Includes general utility commands such as `ping`, `privacy`, `restart_gameserver`, `update_gameserver`, `start_testserver`, `restart_testserver` and `stop_testserver`.
     -   `/ping`: Checks the bot's latency.
     -   `/privacy`: Displays the privacy policy.
     -   `/restart_gameserver`: Restarts the game server (Admin only).
     -   `/update_gameserver`: Updates the game server (Admin only).
+    -   `/start_testserver`: Starts the test server (Admin only).
+    -   `/restart_testserver`: Restarts the test server (Admin only).
+    -   `/stop_testserver`: Stops the test server (Admin only).
 -   **ServerConfigCog:** Allows administrators to change server settings like the scenario ID.
     -   `/change_scenario`: Changes the server scenario (Admin only).
 -   **MosCog:** MOS related commands for loadout management.

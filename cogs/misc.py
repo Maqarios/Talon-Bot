@@ -7,6 +7,9 @@ from discord.ext import commands
 import config
 from utils.utils import restart_gameserver as restart_gameserver_util
 from utils.utils import update_gameserver as update_gameserver_util
+from utils.utils import start_testserver as start_testserver_util
+from utils.utils import restart_testserver as restart_testserver_util
+from utils.utils import stop_testserver as stop_testserver_util
 
 
 class MiscCog(commands.Cog):
@@ -115,6 +118,65 @@ class MiscCog(commands.Cog):
         except subprocess.CalledProcessError as e:
             await interaction.edit_original_response(
                 content=f"Failed to update the game server: {e}"
+            )
+
+    # Slash Command: /start_testserver
+    @app_commands.command(name="start_testserver", description="Start the test server.")
+    async def start_testserver(self, interaction: discord.Interaction):
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        try:
+            start_testserver_util()
+            await interaction.response.send_message(
+                "Test server is starting...", ephemeral=True
+            )
+        except subprocess.CalledProcessError as e:
+            await interaction.response.send_message(
+                f"Failed to start the test server: {e}", ephemeral=True
+            )
+
+    # Slash Command: /restart_testserver
+    @app_commands.command(
+        name="restart_testserver", description="Restart the test server."
+    )
+    async def restart_testserver(self, interaction: discord.Interaction):
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        try:
+            restart_testserver_util()
+            await interaction.response.send_message(
+                "Test server is restarting...", ephemeral=True
+            )
+        except subprocess.CalledProcessError as e:
+            await interaction.response.send_message(
+                f"Failed to restart the test server: {e}", ephemeral=True
+            )
+
+    # Slash Command: /stop_testserver
+    @app_commands.command(name="stop_testserver", description="Stop the test server.")
+    async def stop_testserver(self, interaction: discord.Interaction):
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        try:
+            stop_testserver_util()
+            await interaction.response.send_message(
+                "Test server is stopping...", ephemeral=True
+            )
+        except subprocess.CalledProcessError as e:
+            await interaction.response.send_message(
+                f"Failed to stop the test server: {e}", ephemeral=True
             )
 
 

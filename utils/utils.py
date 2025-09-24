@@ -209,6 +209,108 @@ def update_gameserver() -> bool:
         return False
 
 
+# Start the testserver
+def start_testserver() -> bool:
+    """
+    Attempts to start the Arma Reforger test server using systemctl.
+
+    Runs the command 'sudo systemctl start arma-reforger-test-server' with a timeout of 5 seconds.
+    Logs errors if the command fails, times out, or encounters an unexpected exception.
+
+    Returns:
+        bool: True if the server started successfully, False otherwise.
+    """
+    try:
+        result = subprocess.run(
+            ["sudo", "systemctl", "start", "arma-reforger-test-server"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+
+        if result.returncode != 0:
+            log.error(
+                f"Failed to start testserver, bash script returned {result.returncode}: {result.stderr.strip()}"
+            )
+            return False
+
+        log.info("Testserver started successfully.")
+        return True
+
+    except subprocess.TimeoutExpired:
+        log.error("Testserver start command timed out")
+        return False
+    except subprocess.CalledProcessError as e:
+        log.error(f"Testserver start command failed: {e}")
+        return False
+    except Exception as e:
+        log.error(f"Unexpected error starting testserver: {e}")
+        return False
+
+
+# Restart the testserver
+def restart_testserver() -> bool:
+    try:
+        result = subprocess.run(
+            ["sudo", "systemctl", "restart", "arma-reforger-test-server"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+
+        if result.returncode != 0:
+            log.error(
+                f"Failed to restart testserver, bash script returned {result.returncode}: {result.stderr.strip()}"
+            )
+            return False
+
+        log.info("Testserver restarted successfully.")
+        return True
+
+    except subprocess.TimeoutExpired:
+        log.error("Testserver restart command timed out")
+        return False
+    except subprocess.CalledProcessError as e:
+        log.error(f"Testserver restart command failed: {e}")
+        return False
+    except Exception as e:
+        log.error(f"Unexpected error restarting testserver: {e}")
+        return False
+
+
+# Stop the testserver
+def stop_testserver() -> bool:
+    try:
+        result = subprocess.run(
+            ["sudo", "systemctl", "stop", "arma-reforger-test-server"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+
+        if result.returncode != 0:
+            log.error(
+                f"Failed to stop testserver, bash script returned {result.returncode}: {result.stderr.strip()}"
+            )
+            return False
+
+        log.info("Testserver stopped successfully.")
+        return True
+
+    except subprocess.TimeoutExpired:
+        log.error("Testserver stop command timed out")
+        return False
+    except subprocess.CalledProcessError as e:
+        log.error(f"Testserver stop command failed: {e}")
+        return False
+    except Exception as e:
+        log.error(f"Unexpected error stopping testserver: {e}")
+        return False
+
+
 def get_active_messages_id(activemessagesids_path, entry):
     # Check if the file exists
     if not Path(activemessagesids_path).is_file():

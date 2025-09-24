@@ -276,9 +276,14 @@ async def create_or_update_active_players_on_gameserver_status_message(
     gameserver_status = is_port_listening(config.GAMESERVER_PORT)
 
     if not gameserver_status:
+        # await channel.edit(name=f"⏳│𝐒𝐞𝐫𝐯𝐞𝐫-𝐒𝐭𝐚𝐭𝐮𝐬-〔Offline〕")
         embed.title = "Server is Offline"
         embed.color = discord.Color.red()
     else:
+        # await channel.edit(
+        #     name=f"⏳│𝐒𝐞𝐫𝐯𝐞𝐫-𝐒𝐭𝐚𝐭𝐮𝐬-〔{server_stats.players}／{server_config.game.maxPlayers}〕"
+        # )
+
         # Define the field to be added
 
         # Players list field
@@ -343,10 +348,11 @@ async def create_or_update_active_players_on_gameserver_status_message(
 
 
 class ModsActiveMessages:
-    def __init__(self, bot, channel_id, server_config):
+    def __init__(self, bot, channel_id, server_config, server_config_path):
         self.bot = bot
         self.channel_id = channel_id
         self.server_config = server_config
+        self.server_config_path = server_config_path
 
         self.channel = None
         self.messages_cache = {}
@@ -531,7 +537,7 @@ class ModsActiveMessages:
                     mod_name = custom_id[2]
                     mod_version = custom_id[3]
                     add_mod_to_serverconfig(
-                        config.SERVERCONFIG_PATH, mod_id, mod_name, mod_version
+                        self.server_config_path, mod_id, mod_name, mod_version
                     )
 
                     await interaction.message.delete()
@@ -540,7 +546,7 @@ class ModsActiveMessages:
                 elif message_type == "update_mod":
                     new_version = custom_id[2]
                     update_mod_version_in_serverconfig(
-                        config.SERVERCONFIG_PATH, mod_id, new_version
+                        self.server_config_path, mod_id, new_version
                     )
 
                     await self.create_or_update_mod_message(mod_id)
@@ -549,7 +555,7 @@ class ModsActiveMessages:
                     await self.create_or_update_mod_message(mod_id)
 
                 elif message_type == "remove_mod":
-                    remove_mod_from_serverconfig(config.SERVERCONFIG_PATH, mod_id)
+                    remove_mod_from_serverconfig(self.server_config_path, mod_id)
 
                     await self.delete_mod_message(mod_id)
 
