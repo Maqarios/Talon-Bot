@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import discord
@@ -15,11 +16,23 @@ class MosCog(commands.Cog):
         self.users_dbm = users_dbm
         self.profile_dir_path = profile_dir_path
 
+        self.RIFLEMAN = 0
+        self.LMG = 1
+        self.CMT = 2
+        self.LS = 3
+        self.JTAC = 4
+        self.DAB = 5
+        self.GRENADIER = 6
+        self.MARKSMAN = 7
+
     def _get_bacon_loadout_path(self, bohemia_id):
         return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.4/US/{bohemia_id[:2]}/{bohemia_id}"
 
     def _get_persistent_loadout_path(self, bohemia_id):
         return f"{self.profile_dir_path}/GMPersistentLoadouts/v2/US/{bohemia_id[:2]}/{bohemia_id}"
+
+    def _get_bacon_admin_loadout_path(self):
+        return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.4/admin_loadouts"
 
     # Slash Command: /delete_user_loadout
     @app_commands.command(
@@ -166,6 +179,99 @@ class MosCog(commands.Cog):
 
         await interaction.response.send_message(
             "Loadouts restored to their original state.", ephemeral=True
+        )
+
+    # Slash Command: /give_user_kit
+    @app_commands.command(
+        name="give_user_kit", description="Give the specified user a kit."
+    )
+    @app_commands.describe(
+        user="The user to give the kit to", kit="Kit name", slot="Slot index"
+    )
+    @app_commands.choices(
+        kit=[
+            app_commands.Choice(name="RIFLEMAN", value="rifleman"),
+            app_commands.Choice(name="LMG", value="lmg"),
+            app_commands.Choice(name="CMT", value="cmt"),
+            app_commands.Choice(name="LS", value="ls"),
+            app_commands.Choice(name="JTAC", value="jtac"),
+            app_commands.Choice(name="DAB", value="dab"),
+            app_commands.Choice(name="GRENADIER", value="grenadier"),
+            app_commands.Choice(name="MARKSMAN", value="marksman"),
+        ]
+    )
+    async def give_user_kit(
+        self, interaction: discord.Interaction, user: discord.User, kit: str, slot: int
+    ):
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        match kit:
+            case "rifleman":
+                kit_index = self.RIFLEMAN
+            case "lmg":
+                kit_index = self.LMG
+            case "cmt":
+                kit_index = self.CMT
+            case "ls":
+                kit_index = self.LS
+            case "jtac":
+                kit_index = self.JTAC
+            case "dab":
+                kit_index = self.DAB
+            case "grenadier":
+                kit_index = self.GRENADIER
+            case "marksman":
+                kit_index = self.MARKSMAN
+            case _:
+                await interaction.response.send_message(
+                    f"Invalid kit specified: {kit}.", ephemeral=True
+                )
+                return
+        slot -= 1  # Convert to 0-indexed
+
+        target_user_bohemia_id = self.users_dbm.read_bohemia_id(user.id)
+        if target_user_bohemia_id is None:
+            await interaction.response.send_message(
+                f"User {user.display_name} does not have a Bohemia ID registered.",
+                ephemeral=True,
+            )
+            return
+
+        admin_bacon_loadout_path = self._get_bacon_admin_loadout_path()
+        target_user_bacon_loadout_path = self._get_bacon_loadout_path(
+            target_user_bohemia_id
+        )
+
+        try:
+            admin_loadouts = None
+            with open(admin_bacon_loadout_path, "r") as f:
+                admin_loadouts = json.load(f)
+
+            target_loadouts = None
+            with open(target_user_bacon_loadout_path, "r") as f:
+                target_loadouts = json.load(f)
+
+            target_loadouts["playerLoadouts"]["US"][str(slot)] = admin_loadouts[
+                "playerLoadouts"
+            ]["admin"][str(kit_index)]
+            target_loadouts["playerLoadouts"]["US"][str(slot)]["slotId"] = slot
+
+            with open(target_user_bacon_loadout_path, "w") as f:
+                json.dump(target_loadouts, f, indent=4)
+
+        except Exception as e:
+            await interaction.response.send_message(
+                f"Error processing loadouts: {e}", ephemeral=True
+            )
+            return
+
+        await interaction.response.send_message(
+            f"Gave {user.display_name} the {kit.upper()} kit in slot {slot + 1}.",
+            ephemeral=True,
         )
 
 
