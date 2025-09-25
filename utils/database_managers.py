@@ -13,14 +13,16 @@ class UserDatabaseManager:
 
         cursor.execute(
             """
-        CREATE TABLE IF NOT EXISTS users (
+        CREATE TABLE IF NOT EXISTS users
+        (
             discord_id BIGINT PRIMARY KEY, 
             discord_username TEXT NOT NULL,
             discord_displayname TEXT NOT NULL,
             status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive', 'Banned', 'Retired')),
             team TEXT NOT NULL DEFAULT 'Unassigned' CHECK (team IN ('Unassigned', 'Green Team', 'Chalk Team', 'Red Section', 'Grey Section', 'Black Section', 'Red Talon')),
-            joined DATE NOT NULL DEFAULT (date('now', 'localtime')),
-            bohemia_id TEXT UNIQUE DEFAULT NULL )
+            joined DATE DEFAULT NULL,
+            bohemia_id TEXT UNIQUE DEFAULT NULL
+        )
         """
         )
 
@@ -126,11 +128,10 @@ class UserDatabaseManager:
 
     def get_users_for_active_message(self):
         conn, cursor = self.get_connection()
-        cursor.execute(
-            "SELECT discord_id, status, team, joined FROM users ORDER BY joined"
-        )
+        cursor.execute("SELECT discord_id, status, team, joined FROM users")
         users = cursor.fetchall()
         conn.close()
+
         return users
 
 

@@ -371,12 +371,15 @@ def format_mos(user_roles, mos_roles):
             user_mos_roles.append(user_role.name)
 
     if not user_mos_roles:
-        return ""
+        return "N/A"
 
-    return "[{}]".format(", ".join(user_mos_roles))
+    return "{}".format(", ".join(user_mos_roles))
 
 
 def format_time_elapsed(date_str):
+    if not date_str:
+        return "N/A"
+
     # Parse YYYY-MM-DD format
     date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
 
@@ -400,7 +403,7 @@ def format_time_elapsed(date_str):
     elif delta.days > 0:
         return f"{delta.days}d"
     else:
-        return "today"
+        return "Today"
 
 
 def list_active_mods(serverconfig_path):

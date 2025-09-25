@@ -97,6 +97,7 @@ class TalonBot(commands.Bot):
             channel_id=config.CHANNEL_IDS["Server Status"],
             server_stats=self.server_stats_file_watcher,
             server_config=self.server_config_file_watcher,
+            users_dbm=USERS_DBM,
         )
         create_or_update_server_utilization_status_message.start(
             bot=bot, channel_id=config.CHANNEL_IDS["Stats"]
@@ -108,7 +109,6 @@ class TalonBot(commands.Bot):
         # Check if the member is already registered
         if USERS_DBM.read(user.id):
             USERS_DBM.update_status(user.id, "Active")
-            USERS_DBM.reset_joined(user.id)
             ROLE_LOGS_DBM.create(
                 user.id,
                 user.id,
@@ -145,7 +145,6 @@ class TalonBot(commands.Bot):
 
             if old_team == "Unassigned":
                 USERS_DBM.update_team(member.id, "Green Team")
-                USERS_DBM.reset_joined(member.id)
             ROLE_LOGS_DBM.create(
                 member.id,
                 member.id,
@@ -158,22 +157,6 @@ class TalonBot(commands.Bot):
             added_roles = [role for role in after.roles if role not in before.roles]
             removed_roles = [role for role in before.roles if role not in after.roles]
 
-            for role in added_roles:
-                # Update team if the role is in TEAMS_ROLES
-                if role.name in config.TEAMS_ROLES:
-                    if not user_bohemia_id:
-                        await send_embed(
-                            channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
-                            description=f"User {member.display_name} does not have a Bohemia ID.",
-                            color=discord.Color.red(),
-                        )
-
-                    add_player_to_playersgroups(
-                        config.PLAYERSGROUPS_PATH,
-                        config.TEAMS_ROLES[role.name][1],
-                        user_bohemia_id,
-                    )
-
             for role in removed_roles:
                 # Update team if the role is in TEAMS_ROLES
                 if role.name in config.TEAMS_ROLES:
@@ -184,7 +167,31 @@ class TalonBot(commands.Bot):
                             color=discord.Color.red(),
                         )
 
+                    if (
+                        USERS_DBM.read_team(member.id)
+                        == config.TEAMS_ROLES[role.name][0]
+                    ):
+                        USERS_DBM.update_team(member.id, "Unassigned")
+
                     remove_player_from_playersgroups(
+                        config.PLAYERSGROUPS_PATH,
+                        config.TEAMS_ROLES[role.name][1],
+                        user_bohemia_id,
+                    )
+
+            for role in added_roles:
+                # Update team if the role is in TEAMS_ROLES
+                if role.name in config.TEAMS_ROLES:
+                    if not user_bohemia_id:
+                        await send_embed(
+                            channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
+                            description=f"User {member.display_name} does not have a Bohemia ID.",
+                            color=discord.Color.red(),
+                        )
+
+                    USERS_DBM.update_team(member.id, config.TEAMS_ROLES[role.name][0])
+
+                    add_player_to_playersgroups(
                         config.PLAYERSGROUPS_PATH,
                         config.TEAMS_ROLES[role.name][1],
                         user_bohemia_id,
@@ -273,7 +280,6 @@ class TalonBot(commands.Bot):
 
             if old_team == "Unassigned":
                 USERS_DBM.update_team(user_id, "Green Team")
-                USERS_DBM.reset_joined(user_id)
             ROLE_LOGS_DBM.create(
                 user_id,
                 user_id,

@@ -6,6 +6,9 @@ class ActivePlayersBohemiaIDCache:
         self.users_dbm = users_dbm
         self.cache = {"known": {}, "unknown": {}}
 
+    def is_known_player(self, player_bohemia_id):
+        return player_bohemia_id in self.cache["known"]
+
     def get_known_players(self):
         return self.cache["known"]
 
@@ -15,6 +18,9 @@ class ActivePlayersBohemiaIDCache:
     def remove_known_player(self, player_bohemia_id):
         if player_bohemia_id in self.cache["known"]:
             del self.cache["known"][player_bohemia_id]
+
+    def is_unknown_player(self, player_bohemia_id):
+        return player_bohemia_id in self.cache["unknown"]
 
     def get_unknown_players(self):
         return self.cache["unknown"]

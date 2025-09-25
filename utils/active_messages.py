@@ -164,13 +164,6 @@ async def create_or_update_teams_members_status_message(
     view = View(timeout=None)
     view.add_item(refresh_button)
 
-    # Create Discord embed for better formatting
-    embed = discord.Embed(
-        title="Team Status",
-        color=discord.Color.blue(),
-        timestamp=datetime.datetime.now(),
-    )
-
     # Get data from database
     users = user_dbm.get_users_for_active_message()
 
@@ -181,12 +174,28 @@ async def create_or_update_teams_members_status_message(
             teams[user_team].append((user_id, user_joined))
 
     # Add each team as a field in the embed
+    embed_list = []
     for team_name, members in teams.items():
 
         if team_name in ["Unassigned", "Green Team", "Red Talon"]:
             continue  # Skip Unassigned and Green Team
 
-        member_list = ""
+        # Create Discord embed for better formatting
+        embed_title = team_name
+        embed_color = discord.Color(0xFFFFFE)
+
+        if team_name == "Chalk Team":
+            embed_color = discord.Color.gold()
+        elif team_name == "Red Section":
+            embed_color = discord.Color.red()
+        elif team_name == "Grey Section":
+            embed_color = discord.Color.light_grey()
+        elif team_name == "Black Section":
+            embed_color = discord.Color(0x000001)
+
+        name_list = ""
+        mos_list = ""
+        joined_list = ""
         for member_id, joined in members:
             user = bot.get_user(member_id)
             member = await bot.guilds[0].fetch_member(member_id)
@@ -194,24 +203,36 @@ async def create_or_update_teams_members_status_message(
             display_name = user.display_name
             user_roles = member.roles
 
-            member_list += (
-                f"• {display_name} {format_mos(user_roles, config.MOS_ROLES)} "
-                f"({format_time_elapsed(joined)})\n"
-            )
+            name_list += f"{display_name}\n"
+            mos_list += f"{format_mos(user_roles, config.MOS_ROLES)}\n"
+            joined_list += f"{format_time_elapsed(joined)}\n"
 
         # If no members, set to "No members"
         if not members:
-            member_list = "No members"
+            name_list = "N/A"
+            mos_list = "N/A"
+            joined_list = "N/A"
 
-        # Add the team to the embed
-        embed.add_field(name=team_name, value=member_list, inline=False)
+        name_list += "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
+        mos_list += "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
+        joined_list += "⠀⠀⠀⠀⠀⠀⠀⠀"
 
-    # Add footer with timestamp
-    embed.set_footer(text="Last updated")
+        # Create embed and add fields to it
+        embed = discord.Embed(
+            title=embed_title,
+            color=embed_color,
+            timestamp=datetime.datetime.now(),
+        )
+        embed.add_field(name="Name", value=name_list, inline=True)
+        embed.add_field(name="MOS", value=mos_list, inline=True)
+        embed.add_field(name="Last Seen", value=joined_list, inline=True)
+
+        # Add embed to the embed list
+        embed_list.append(embed)
 
     # Edit the message with the new content
     try:
-        await message.edit(content=None, embed=embed, view=view)
+        await message.edit(content=None, embeds=embed_list, view=view)
     except discord.NotFound:
         time.sleep(config.SLEEP_TIME)
         create_or_update_teams_members_status_message(bot, channel_id, user_dbm)
@@ -230,6 +251,7 @@ async def create_or_update_active_players_on_gameserver_status_message(
     channel_id,
     server_stats,
     server_config,
+    users_dbm,
 ):
     # Fetch the channel
     try:
@@ -312,6 +334,12 @@ async def create_or_update_active_players_on_gameserver_status_message(
                 ACTIVE_PLAYERS_BOHEMIA_ID_CACHE.handle_player(
                     player_bohemia_id, player_name
                 )
+
+                if ACTIVE_PLAYERS_BOHEMIA_ID_CACHE.is_known_player(player_bohemia_id):
+                    player_discord_id = users_dbm.read_by_bohemia_id(player_bohemia_id)[
+                        0
+                    ]
+                    users_dbm.reset_joined(player_discord_id)
 
         embed.add_field(**field)
 
