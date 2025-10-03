@@ -5,6 +5,13 @@ from typing import Optional
 
 import config
 
+# Disable overly verbose logging from external libraries
+logging.getLogger("discord").setLevel(logging.WARNING)
+logging.getLogger("asyncio").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("watchdog").setLevel(logging.WARNING)
+
 
 def configure_logging(
     *,
