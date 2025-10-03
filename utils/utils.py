@@ -366,9 +366,10 @@ def set_active_messages_id(activemessagesids_path, entry, messages_id=None):
 
 def format_mos(user_roles, mos_roles):
     user_mos_roles = []
-    for user_role in user_roles:
-        if user_role.name in mos_roles:
-            user_mos_roles.append(user_role.name)
+    user_role_names = [role.name for role in user_roles]
+    for mos_role in mos_roles:
+        if mos_role in user_role_names:
+            user_mos_roles.append(mos_role)
 
     if not user_mos_roles:
         return "N/A"

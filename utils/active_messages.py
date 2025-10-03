@@ -187,7 +187,7 @@ async def create_or_update_teams_members_status_message(
         if team_name == "Chalk Team":
             embed_color = discord.Color.gold()
         elif team_name == "Red Section":
-            embed_color = discord.Color.red()
+            embed_color = discord.Color(0xDC143C)
         elif team_name == "Grey Section":
             embed_color = discord.Color.light_grey()
         elif team_name == "Black Section":
@@ -196,15 +196,23 @@ async def create_or_update_teams_members_status_message(
         name_list = ""
         mos_list = ""
         joined_list = ""
-        for member_id, joined in members:
+        for idx, (member_id, joined) in enumerate(members):
             user = bot.get_user(member_id)
             member = await bot.guilds[0].fetch_member(member_id)
 
             display_name = user.display_name
             user_roles = member.roles
 
-            name_list += f"{display_name}\n"
-            mos_list += f"{format_mos(user_roles, config.MOS_ROLES)}\n"
+            if len(display_name) > 23:
+                name_list += f"{idx + 1}• {display_name[:23]}...\n"
+            else:
+                name_list += f"{idx + 1}• {display_name}\n"
+
+            if len(format_mos(user_roles, config.MOS_ROLES)) > 20:
+                mos_list += f"{format_mos(user_roles, config.MOS_ROLES)[:20]}...\n"
+            else:
+                mos_list += f"{format_mos(user_roles, config.MOS_ROLES)[:20]}\n"
+
             joined_list += f"{format_time_elapsed(joined)}\n"
 
         # If no members, set to "No members"
@@ -321,7 +329,7 @@ async def create_or_update_active_players_on_gameserver_status_message(
             )
         else:
             field["name"] = (
-                f"Players ( {server_stats.players} / {server_config.game.maxPlayers} )"
+                f"Operatives ( {server_stats.players} / {server_config.game.maxPlayers} )"
             )
             field["value"] = "\n".join(
                 [f"• {player}" for player in server_stats.connected_players.values()]
