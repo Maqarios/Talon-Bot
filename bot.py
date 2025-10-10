@@ -160,18 +160,19 @@ class TalonBot(commands.Bot):
             for role in removed_roles:
                 # Update team if the role is in TEAMS_ROLES
                 if role.name in config.TEAMS_ROLES:
+                    if (
+                        USERS_DBM.read_team(member.id)
+                        == config.TEAMS_ROLES[role.name][0]
+                    ):
+                        USERS_DBM.update_team(member.id, "Unassigned")
+
                     if not user_bohemia_id:
                         await send_embed(
                             channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
                             description=f"User {member.display_name} does not have a Bohemia ID.",
                             color=discord.Color.red(),
                         )
-
-                    if (
-                        USERS_DBM.read_team(member.id)
-                        == config.TEAMS_ROLES[role.name][0]
-                    ):
-                        USERS_DBM.update_team(member.id, "Unassigned")
+                        continue
 
                     remove_player_from_playersgroups(
                         config.PLAYERSGROUPS_PATH,
@@ -182,14 +183,15 @@ class TalonBot(commands.Bot):
             for role in added_roles:
                 # Update team if the role is in TEAMS_ROLES
                 if role.name in config.TEAMS_ROLES:
+                    USERS_DBM.update_team(member.id, config.TEAMS_ROLES[role.name][0])
+                    
                     if not user_bohemia_id:
                         await send_embed(
                             channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
                             description=f"User {member.display_name} does not have a Bohemia ID.",
                             color=discord.Color.red(),
                         )
-
-                    USERS_DBM.update_team(member.id, config.TEAMS_ROLES[role.name][0])
+                        continue
 
                     add_player_to_playersgroups(
                         config.PLAYERSGROUPS_PATH,
