@@ -42,7 +42,12 @@ class MosCog(commands.Cog):
     async def delete_user_loadout(
         self, interaction: discord.Interaction, user: discord.User
     ):
-        if interaction.user.id not in config.ADMIN_IDS:
+        is_MP = False
+        for role in interaction.user.roles:
+            if role.id == config.MP_ROLE_ID:
+                is_MP = True
+                break
+        if not is_MP:
             await interaction.response.send_message(
                 "You don't have permission to use this command.", ephemeral=True
             )
@@ -82,7 +87,12 @@ class MosCog(commands.Cog):
     async def start_mos_check(
         self, interaction: discord.Interaction, user: discord.User
     ):
-        if interaction.user.id not in config.ADMIN_IDS:
+        is_MP = False
+        for role in interaction.user.roles:
+            if role.id == config.MP_ROLE_ID:
+                is_MP = True
+                break
+        if not is_MP:
             await interaction.response.send_message(
                 "You don't have permission to use this command.", ephemeral=True
             )
@@ -143,7 +153,12 @@ class MosCog(commands.Cog):
     # Slash Command: /stop_mos_check
     @app_commands.command(name="stop_mos_check", description="Stop the loadout check.")
     async def stop_mos_check(self, interaction: discord.Interaction):
-        if interaction.user.id not in config.ADMIN_IDS:
+        is_MP = False
+        for role in interaction.user.roles:
+            if role.id == config.MP_ROLE_ID:
+                is_MP = True
+                break
+        if not is_MP:
             await interaction.response.send_message(
                 "You don't have permission to use this command.", ephemeral=True
             )
