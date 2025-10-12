@@ -12,6 +12,7 @@ from utils.utils import (
     add_player_to_playersgroups,
     remove_player_from_playersgroups,
 )
+from utils.misc import LoadoutSnapshotter
 from utils.database_managers import (
     USERS_DBM,
     ROLE_LOGS_DBM,
@@ -42,6 +43,11 @@ class TalonBot(commands.Bot):
         self.server_config_file_watcher_test = ServerConfigFileWatcher(
             config.SERVERCONFIG_TEST_PATH
         )
+        
+        # Snapshotters
+        self.loadout_snapshotter = LoadoutSnapshotter(
+            monitor_dir=config.LOADOUTS_DIR_PATH, max_snapshots=11
+        )
 
         # Active Messages
         self.mods_active_messages = ModsActiveMessages(
@@ -64,10 +70,13 @@ class TalonBot(commands.Bot):
         await self.load_extension("cogs.serverconfig")
         await self.load_extension("cogs.mos")
 
-        # Start file watcher
+        # Start file watchers
         self.server_stats_file_watcher.start()
         self.server_config_file_watcher.start()
         self.server_config_file_watcher_test.start()
+        
+        # Start snapshotters
+        self.loadout_snapshotter.start()
 
         # Sync slash commands
         try:
@@ -295,6 +304,14 @@ class TalonBot(commands.Bot):
 
     async def shutdown(self):
         log.info("Shutdown initiated")
+        
+        # Stop file watchers
+        # self.server_stats_file_watcher.stop()
+        # self.server_config_file_watcher.stop()
+        # self.server_config_file_watcher_test.stop()
+        
+        # Stop snapshotters
+        self.loadout_snapshotter.stop()
 
         # Shutdown database connections
         # TODO: Implement database shutdown logic

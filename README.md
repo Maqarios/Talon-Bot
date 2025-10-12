@@ -71,6 +71,7 @@ DiscordBot/
 │   ├── active_messages.py  # Logic for updating active status messages
 │   ├── file_watchers.py    # File monitoring for server configuration
 │   ├── loggers.py          # Logging configuration and setup
+│   ├── misc.py             # Miscellaneous utilities (e.g., LoadoutSnapshotter)
 │   ├── website_scrapers.py # Website scraping utilities
 │   └── cache.py            # Caching mechanisms
 ├── dbs/                    # Database files (not tracked by Git)
@@ -101,9 +102,10 @@ DiscordBot/
 -   **ServerConfigCog:** Allows administrators to change server settings like the scenario ID.
     -   `/change_scenario`: Changes the server scenario (Admin only).
 -   **MosCog:** MOS related commands for loadout management.
-    -   `/delete_user_loadout`: Deletes the loadout for a specified user (Admin only).
-    -   `/start_mos_check`: Copies the loadout from a specified user to the command invoker (Admin only).
-    -   `/stop_mos_check`: Restores the original loadout of the command invoker (Admin only).
+    -   `/delete_user_loadout`: Deletes all loadout files for a specified user (MP role only).
+    -   `/start_mos_check`: Copies the loadout from a specified user to the command invoker (MP role only).
+    -   `/stop_mos_check`: Restores the original loadout of the command invoker (MP role only).
+    -   `/give_user_kit`: Gives a specified user a pre-defined kit in a specific slot (Admin only).
 
 ## Utilities
 
@@ -113,6 +115,7 @@ DiscordBot/
     -   **ServerAdminToolsStatsFileWatcher:** Monitors JSON statistics files for server performance data (FPS, uptime, player count, entities, etc.) and connected players list with automatic sorting
     -   **ServerConfigFileWatcher:** Tracks server configuration changes including game settings, mods, scenario IDs, and network configuration with automatic data sanitization and mod searchability
     -   **GenericFileWatcher:** Base class providing extensible file monitoring framework using watchdog library with automatic change detection and threading support
+    -   **LoadoutSnapshotter:** Monitors loadout files and creates timestamped backups upon modification, managing a history of snapshots.
 -   **Loggers:** Centralized logging configuration with both console and file output for debugging and monitoring.
 -   **Cache:** Caching mechanisms for storing and quickly accessing data, such as Bohemia IDs.
 

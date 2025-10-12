@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from pathlib import Path
 
 import discord
@@ -9,6 +10,9 @@ import config
 
 from utils.database_managers import USERS_DBM
 
+from utils.loggers import get_logger
+
+log = get_logger(__name__)
 
 class MosCog(commands.Cog):
     def __init__(self, bot, users_dbm, profile_dir_path):
@@ -25,11 +29,17 @@ class MosCog(commands.Cog):
         self.GRENADIER = 6
         self.MARKSMAN = 7
 
-    def _get_bacon_loadout_path(self, bohemia_id):
-        return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.4/US/{bohemia_id[:2]}/{bohemia_id}"
+    def _get_bacon_loadout_path(self, bohemia_id, is_file=True):
+        if is_file:
+            return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.4/US/{bohemia_id[:2]}/{bohemia_id}"
+        
+        return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.4/US/{bohemia_id[:2]}"
 
-    def _get_persistent_loadout_path(self, bohemia_id):
-        return f"{self.profile_dir_path}/GMPersistentLoadouts/v2/US/{bohemia_id[:2]}/{bohemia_id}"
+    def _get_persistent_loadout_path(self, bohemia_id, is_file=True):
+        if is_file:
+            return f"{self.profile_dir_path}/GMPersistentLoadouts/v2/US/{bohemia_id[:2]}/{bohemia_id}"
+        
+        return f"{self.profile_dir_path}/GMPersistentLoadouts/v2/US/{bohemia_id[:2]}"
 
     def _get_bacon_admin_loadout_path(self):
         return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.4/admin_loadouts"
@@ -61,23 +71,36 @@ class MosCog(commands.Cog):
             )
             return
 
-        target_user_bacon_loadout_path = self._get_bacon_loadout_path(
-            target_user_bohemia_id
-        )
-        target_user_persistent_loadout_path = self._get_persistent_loadout_path(
-            target_user_bohemia_id
-        )
+        # Get directory paths for the user's sections
+        bacon_dir = Path(self._get_bacon_loadout_path(target_user_bohemia_id, is_file=False))
+        persistent_dir = Path(self._get_persistent_loadout_path(target_user_bohemia_id, is_file=False))
 
-        if Path(target_user_bacon_loadout_path).is_file():
-            Path(target_user_bacon_loadout_path).unlink()
+        deleted_files = []
+        
+        # Delete all files starting with the user's bohemia_id in bacon loadout directory
+        if bacon_dir.exists():
+            for file_path in bacon_dir.glob(f"{target_user_bohemia_id}*"):
+                if file_path.is_file():
+                    file_path.unlink()
+                    deleted_files.append(str(file_path))
+        
+        # Delete all files starting with the user's bohemia_id in persistent loadout directory
+        if persistent_dir.exists():
+            for file_path in persistent_dir.glob(f"{target_user_bohemia_id}*"):
+                if file_path.is_file():
+                    file_path.unlink()
+                    deleted_files.append(str(file_path))
 
-        if Path(target_user_persistent_loadout_path).is_file():
-            Path(target_user_persistent_loadout_path).unlink()
-
-        await interaction.response.send_message(
-            f"Loadouts deleted for user {user.display_name}.",
-            ephemeral=True,
-        )
+        if deleted_files:
+            await interaction.response.send_message(
+                f"Deleted {len(deleted_files)} loadout files for user {user.display_name}.",
+                ephemeral=True,
+            )
+        else:
+            await interaction.response.send_message(
+                f"No loadout files found for user {user.display_name}.",
+                ephemeral=True,
+            )
 
     # Slash Command: /start_mos_check
     @app_commands.command(
@@ -289,6 +312,69 @@ class MosCog(commands.Cog):
             ephemeral=True,
         )
 
+    # Slash Command: /load_backup_loadout
+    @app_commands.command(
+        name="load_backup_loadout", description="Load a backup loadout."
+    )
+    @app_commands.describe(save="Which save to restore")
+    async def load_backup_loadout(
+        self, interaction: discord.Interaction, save: str
+    ):
+        user_bohemia_id = self.users_dbm.read_bohemia_id(interaction.user.id)
+        if user_bohemia_id is None:
+            await interaction.response.send_message(
+                f"You do not have a Bohemia ID registered. Contact an admin to register you.",
+                ephemeral=True,
+            )
+            return
+
+        current_loadout_path = Path(self._get_bacon_loadout_path(user_bohemia_id))
+        chosen_loadout_path = Path(f"{self._get_bacon_loadout_path(user_bohemia_id)}_{save}")
+        
+        try:
+            current_loadout_path.unlink()
+            chosen_loadout_path.rename(current_loadout_path)
+        except Exception as e:
+            await interaction.response.send_message(
+                f"Error loading backup kit: {e}", ephemeral=True
+            )
+            return
+
+        await interaction.response.send_message(
+            f"Loaded backup kit {save}.",
+            ephemeral=True,
+        )
+
+    @load_backup_loadout.autocomplete("save")
+    async def save_autocomplete(self, interaction: discord.Interaction, current: str):
+        user_bohemia_id = self.users_dbm.read_bohemia_id(interaction.user.id)
+        if user_bohemia_id is None:
+            return []
+        
+        options = []
+        
+        # Get directory paths for the user's sections
+        bacon_dir = Path(self._get_bacon_loadout_path(user_bohemia_id, is_file=False))
+        
+        # Delete all files starting with the user's bohemia_id in bacon loadout directory
+        if bacon_dir.exists():
+            for file_path in sorted(bacon_dir.glob(f"{user_bohemia_id}_*"), reverse=True):
+                if file_path.is_file():
+                    options.append(file_path.stem.replace(f"{user_bohemia_id}_", ""))
+        
+        # Since most recent kit is the current kit, we gonna skip it
+        if len(options) > 0:
+            options = options[1:]
+        
+        choices = []
+        for opt in options:
+            if current.lower() in opt.lower():
+                name = datetime.strptime(opt, config.SNAPSHOT_FORMAT)
+                name = f"Date: {name.strftime('%d.%m.%Y')}, Time: {name.strftime('%H:%M:%S')}"
+                
+                choices.append(app_commands.Choice(name=name, value=opt))
+        
+        return choices[:25]  # Discord allows max 25 choices
 
 async def setup(bot):
     await bot.add_cog(MosCog(bot, USERS_DBM, config.PROFILE_DIR_PATH))
