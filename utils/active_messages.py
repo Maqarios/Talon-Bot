@@ -33,7 +33,7 @@ async def create_empty_message(channel, initial_message="Empty Message"):
     return message
 
 
-@tasks.loop(minutes=1)
+@tasks.loop(seconds=30)
 async def create_or_update_server_utilization_status_message(
     bot,
     channel_id,
@@ -253,7 +253,7 @@ async def create_or_update_teams_members_status_message(
     return True
 
 
-@tasks.loop(minutes=1)
+@tasks.loop(seconds=30)
 async def create_or_update_active_players_on_gameserver_status_message(
     bot,
     channel_id,
