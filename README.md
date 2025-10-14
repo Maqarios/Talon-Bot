@@ -63,7 +63,8 @@ DiscordBot/
 │   ├── misc.py             # Miscellaneous commands (ping, privacy, restart server)
 │   ├── user.py             # User management and misconduct logging commands
 │   ├── serverconfig.py     # Server configuration commands (change scenario)
-│   └── mos.py              # MOS related commands (loadout management)
+│   ├── mos.py              # MOS related commands (loadout management)
+│   └── log.py              # Log viewing commands
 ├── utils/                  # Utility modules
 │   ├── __init__.py
 │   ├── utils.py            # Helper functions (server status, time formatting)
@@ -106,6 +107,8 @@ DiscordBot/
     -   `/start_mos_check`: Copies the loadout from a specified user to the command invoker (MP role only).
     -   `/stop_mos_check`: Restores the original loadout of the command invoker (MP role only).
     -   `/give_user_kit`: Gives a specified user a pre-defined kit in a specific slot (Admin only).
+-   **LogCog:** Provides commands to view game logs.
+    -   `/show_gm_activity`: Shows recent GM activity logs with various filters (CO, MPO and AO only).
 
 ## Utilities
 

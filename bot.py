@@ -43,7 +43,7 @@ class TalonBot(commands.Bot):
         self.server_config_file_watcher_test = ServerConfigFileWatcher(
             config.SERVERCONFIG_TEST_PATH
         )
-        
+
         # Snapshotters
         self.loadout_snapshotter = LoadoutSnapshotter(
             monitor_dir=config.LOADOUTS_DIR_PATH, max_snapshots=11
@@ -69,12 +69,13 @@ class TalonBot(commands.Bot):
         await self.load_extension("cogs.misc")
         await self.load_extension("cogs.serverconfig")
         await self.load_extension("cogs.mos")
+        await self.load_extension("cogs.log")
 
         # Start file watchers
         self.server_stats_file_watcher.start()
         self.server_config_file_watcher.start()
         self.server_config_file_watcher_test.start()
-        
+
         # Start snapshotters
         self.loadout_snapshotter.start()
 
@@ -193,7 +194,7 @@ class TalonBot(commands.Bot):
                 # Update team if the role is in TEAMS_ROLES
                 if role.name in config.TEAMS_ROLES:
                     USERS_DBM.update_team(member.id, config.TEAMS_ROLES[role.name][0])
-                    
+
                     if not user_bohemia_id:
                         await send_embed(
                             channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
@@ -304,12 +305,12 @@ class TalonBot(commands.Bot):
 
     async def shutdown(self):
         log.info("Shutdown initiated")
-        
+
         # Stop file watchers
         # self.server_stats_file_watcher.stop()
         # self.server_config_file_watcher.stop()
         # self.server_config_file_watcher_test.stop()
-        
+
         # Stop snapshotters
         self.loadout_snapshotter.stop()
 
