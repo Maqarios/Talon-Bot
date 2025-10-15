@@ -193,7 +193,10 @@ class TalonBot(commands.Bot):
             for role in added_roles:
                 # Update team if the role is in TEAMS_ROLES
                 if role.name in config.TEAMS_ROLES:
-                    USERS_DBM.update_team(member.id, config.TEAMS_ROLES[role.name][0])
+                    if config.TEAMS_ROLES[role.name][0]:
+                        USERS_DBM.update_team(
+                            member.id, config.TEAMS_ROLES[role.name][0]
+                        )
 
                     if not user_bohemia_id:
                         await send_embed(

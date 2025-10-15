@@ -92,7 +92,7 @@ DiscordBot/
 -   **MisconductCog:** Handles misconduct logging and management.
     -   `/add_misconduct`: Adds a misconduct record for a user with category/type autocomplete (Admin only).
     -   `/show_misconducts`: Shows the misconduct logs for a specified user (Admin only).
--   **MiscCog:** Includes general utility commands such as `ping`, `privacy`, `restart_gameserver`, `update_gameserver`, `start_testserver`, `restart_testserver` and `stop_testserver`.
+-   **MiscCog:** Includes general utility commands.
     -   `/ping`: Checks the bot's latency.
     -   `/privacy`: Displays the privacy policy.
     -   `/restart_gameserver`: Restarts the game server (Admin only).
