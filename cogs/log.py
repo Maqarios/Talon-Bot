@@ -154,6 +154,10 @@ class LogCog(commands.Cog):
             if keyword:
                 tmp.write(f"  Keyword: {keyword}\n")
 
+            tmp.write(f"\nOutput:\n")
+
+            tmp.write(f"  Count: {len(activities)}\n")
+
             tmp.write(f"\nActivities:\n")
             for log_time, logs in activities.items():
                 line = f"  Time: {log_time}\n"
