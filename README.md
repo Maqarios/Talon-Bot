@@ -102,6 +102,7 @@ DiscordBot/
     -   `/stop_testserver`: Stops the test server (Admin only).
 -   **ServerConfigCog:** Allows administrators to change server settings like the scenario ID.
     -   `/change_scenario`: Changes the server scenario (Admin only).
+    -   `/change_testserver_scenario`: Changes the test server scenario (Admin only).
 -   **MosCog:** MOS related commands for loadout management.
     -   `/delete_user_loadout`: Deletes all loadout files for a specified user (MP role only).
     -   `/start_mos_check`: Copies the loadout from a specified user to the command invoker (MP role only).
