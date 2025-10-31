@@ -57,6 +57,51 @@ class ServerConfigCog(commands.Cog):
             f"Scenario changed to {scenario_id}.", ephemeral=True
         )
 
+    # Slash Command: /change_servername
+    @app_commands.command(name="change_servername", description="Change server name")
+    async def change_servername(self, interaction: discord.Interaction, name: str):
+        """
+        Change the server name.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+            name (str): The new name to set.
+        """
+        # Check if the user is an admin
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You do not have permission to use this command.", ephemeral=True
+            )
+            return
+
+        # Update the server configuration file
+        if not Path(config.SERVERCONFIG_PATH).is_file():
+            await interaction.response.send_message(
+                f"Server configuration file not found at {config.SERVERCONFIG_PATH}.",
+                ephemeral=True,
+            )
+            return
+
+        server_config = {}
+        with open(config.SERVERCONFIG_PATH, "r") as file:
+            server_config = json.load(file)
+
+        if "game" not in server_config or "name" not in server_config["game"]:
+            await interaction.response.send_message(
+                f"Invalid server configuration file format at {config.SERVERCONFIG_PATH}.",
+                ephemeral=True,
+            )
+            return
+
+        server_config["game"]["name"] = name
+
+        with open(config.SERVERCONFIG_PATH, "w") as file:
+            json.dump(server_config, file, indent=4)
+
+        await interaction.response.send_message(
+            f"Name changed to {name}.", ephemeral=True
+        )
+
     # Slash Command: /change_testserver_scenario
     @app_commands.command(
         name="change_testserver_scenario", description="Change test server scenario"
@@ -104,6 +149,53 @@ class ServerConfigCog(commands.Cog):
 
         await interaction.response.send_message(
             f"Scenario changed to {scenario_id}.", ephemeral=True
+        )
+
+    # Slash Command: /change_testservername
+    @app_commands.command(
+        name="change_testservername", description="Change test server name"
+    )
+    async def change_testservername(self, interaction: discord.Interaction, name: str):
+        """
+        Change the test server name.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+            name (str): The new name to set.
+        """
+        # Check if the user is an admin
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You do not have permission to use this command.", ephemeral=True
+            )
+            return
+
+        # Update the server configuration file
+        if not Path(config.SERVERCONFIG_TEST_PATH).is_file():
+            await interaction.response.send_message(
+                f"Server configuration file not found at {config.SERVERCONFIG_TEST_PATH}.",
+                ephemeral=True,
+            )
+            return
+
+        server_config = {}
+        with open(config.SERVERCONFIG_TEST_PATH, "r") as file:
+            server_config = json.load(file)
+
+        if "game" not in server_config or "name" not in server_config["game"]:
+            await interaction.response.send_message(
+                f"Invalid server configuration file format at {config.SERVERCONFIG_TEST_PATH}.",
+                ephemeral=True,
+            )
+            return
+
+        server_config["game"]["name"] = name
+
+        with open(config.SERVERCONFIG_TEST_PATH, "w") as file:
+            json.dump(server_config, file, indent=4)
+
+        await interaction.response.send_message(
+            f"Name changed to {name}.", ephemeral=True
         )
 
 
