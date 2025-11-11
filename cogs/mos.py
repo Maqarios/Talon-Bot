@@ -31,9 +31,9 @@ class MosCog(commands.Cog):
 
     def _get_bacon_loadout_path(self, bohemia_id, is_file=True):
         if is_file:
-            return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.4/US/{bohemia_id[:2]}/{bohemia_id}"
+            return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.6.0/US/{bohemia_id[:2]}/{bohemia_id}"
         
-        return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.4/US/{bohemia_id[:2]}"
+        return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.6.0/US/{bohemia_id[:2]}"
 
     def _get_persistent_loadout_path(self, bohemia_id, is_file=True):
         if is_file:
@@ -42,7 +42,7 @@ class MosCog(commands.Cog):
         return f"{self.profile_dir_path}/GMPersistentLoadouts/v2/US/{bohemia_id[:2]}"
 
     def _get_bacon_admin_loadout_path(self):
-        return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.4/admin_loadouts"
+        return f"{self.profile_dir_path}/BaconLoadoutEditor_Loadouts/1.6.0/admin_loadouts"
 
     # Slash Command: /delete_user_loadout
     @app_commands.command(
