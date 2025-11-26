@@ -1,35 +1,19 @@
+import json
 import os
 import subprocess
-import json
 import time
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
-import psutil
 import discord
-
+import psutil
 from utils.loggers import get_logger
 
 log = get_logger(__name__)
 
 
 # Check if a specific port is listening (i.e. gameserver)
-def is_port_listening(port: int = 2001) -> bool:
-    """
-    Check if a given TCP/UDP port is currently listening on the local machine.
-
-    Args:
-        port (int, optional): The port number to check. Must be between 1 and 65535. Defaults to 2001.
-
-    Returns:
-        bool: True if the port is listening, False otherwise.
-
-    Raises:
-        ValueError: If the port number is not within the valid range.
-
-    Logs:
-        Errors and exceptions encountered during execution are logged using the `log` object.
-    """
+def is_port_listening(port: int) -> bool:
     try:
         if not (1 <= port <= 65535):
             raise ValueError("Port number must be between 1 and 65535")
@@ -66,20 +50,6 @@ def is_port_listening(port: int = 2001) -> bool:
 
 # CPU, Memory and Disk usage
 def get_server_utilization() -> tuple[float, float, float]:
-    """
-    Retrieves the current server utilization statistics for CPU, memory, and disk usage.
-
-    Attempts to use the `psutil` library for accurate readings. If `psutil` fails,
-    falls back to using shell commands via `subprocess` to obtain the metrics.
-
-    Returns:
-        tuple: A tuple containing three floats:
-            - cpu (float): CPU usage percentage.
-            - memory (float): Memory usage percentage.
-            - disk (float): Disk usage percentage.
-
-    Logs errors if unable to retrieve any of the metrics, and returns 0.0 for failed readings.
-    """
     try:
         cpu = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory().percent
@@ -128,58 +98,8 @@ def get_server_utilization() -> tuple[float, float, float]:
         return cpu, memory, disk
 
 
-# Restart the gameserver
-def restart_gameserver() -> bool:
-    """
-    Attempts to restart the Arma Reforger game server using systemctl.
-
-    Executes the command 'sudo systemctl restart arma-reforger-server' with a timeout of 5 seconds.
-    Logs errors if the restart fails, times out, or encounters unexpected exceptions.
-
-    Returns:
-        bool: True if the server was restarted successfully, False otherwise.
-    """
-    try:
-        result = subprocess.run(
-            ["sudo", "systemctl", "restart", "arma-reforger-server"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=5,
-        )
-
-        if result.returncode != 0:
-            log.error(
-                f"Failed to restart gameserver, bash script returned {result.returncode}: {result.stderr.strip()}"
-            )
-            return False
-
-        log.info("Gameserver restarted successfully.")
-        return True
-
-    except subprocess.TimeoutExpired:
-        log.error("Gameserver restart command timed out")
-        return False
-    except subprocess.CalledProcessError as e:
-        log.error(f"Gameserver restart command failed: {e}")
-        return False
-    except Exception as e:
-        log.error(f"Unexpected error restarting gameserver: {e}")
-        return False
-
-
-# Update the gameserver
-def update_gameserver() -> bool:
-    """
-    Updates the gameserver by executing a bash script.
-
-    Runs the install_or_update.sh script located in the user's Desktop/ArmaR directory.
-    Logs errors if the script fails, times out, or encounters unexpected exceptions.
-
-    Returns:
-        bool: True if the update was successful, False otherwise.
-    """
-
+# Update arma reforger
+def update_arma_reforger() -> bool:
     try:
         result = subprocess.run(
             ["bash", os.path.expanduser("~/Desktop/ArmaR/install_or_update.sh")],
@@ -191,38 +111,29 @@ def update_gameserver() -> bool:
 
         if result.returncode != 0:
             log.error(
-                f"Failed to update gameserver, bash script returned {result.returncode}: {result.stderr.strip()}"
+                f"Failed to update arma reforger, bash script returned {result.returncode}: {result.stderr.strip()}"
             )
             return False
 
-        log.info("Gameserver updated successfully.")
+        log.info("Arma Reforger updated successfully.")
         return True
 
     except subprocess.TimeoutExpired:
-        log.error("Gameserver update command timed out")
+        log.error("Arma Reforger update command timed out")
         return False
     except subprocess.CalledProcessError as e:
-        log.error(f"Gameserver update command failed: {e}")
+        log.error(f"Arma Reforger update command failed: {e}")
         return False
     except Exception as e:
-        log.error(f"Unexpected error updating gameserver: {e}")
+        log.error(f"Unexpected error updating arma reforger: {e}")
         return False
 
 
-# Start the testserver
-def start_testserver() -> bool:
-    """
-    Attempts to start the Arma Reforger test server using systemctl.
-
-    Runs the command 'sudo systemctl start arma-reforger-test-server' with a timeout of 5 seconds.
-    Logs errors if the command fails, times out, or encounters an unexpected exception.
-
-    Returns:
-        bool: True if the server started successfully, False otherwise.
-    """
+# Start arma reforger server
+def start_arma_reforger_server(server_number) -> bool:
     try:
         result = subprocess.run(
-            ["sudo", "systemctl", "start", "arma-reforger-test-server"],
+            ["sudo", "systemctl", "start", f"arma-reforger-server-{server_number}"],
             capture_output=True,
             text=True,
             check=False,
@@ -231,29 +142,29 @@ def start_testserver() -> bool:
 
         if result.returncode != 0:
             log.error(
-                f"Failed to start testserver, bash script returned {result.returncode}: {result.stderr.strip()}"
+                f"Failed to start server {server_number}, bash script returned {result.returncode}: {result.stderr.strip()}"
             )
             return False
 
-        log.info("Testserver started successfully.")
+        log.info(f"Server {server_number} started successfully.")
         return True
 
     except subprocess.TimeoutExpired:
-        log.error("Testserver start command timed out")
+        log.error(f"Server {server_number} start command timed out")
         return False
     except subprocess.CalledProcessError as e:
-        log.error(f"Testserver start command failed: {e}")
+        log.error(f"Server {server_number} start command failed: {e}")
         return False
     except Exception as e:
-        log.error(f"Unexpected error starting testserver: {e}")
+        log.error(f"Unexpected error starting server {server_number}: {e}")
         return False
 
 
-# Restart the testserver
-def restart_testserver() -> bool:
+# Restart arma reforger server
+def restart_arma_reforger_server(server_number) -> bool:
     try:
         result = subprocess.run(
-            ["sudo", "systemctl", "restart", "arma-reforger-test-server"],
+            ["sudo", "systemctl", "restart", f"arma-reforger-server-{server_number}"],
             capture_output=True,
             text=True,
             check=False,
@@ -262,29 +173,29 @@ def restart_testserver() -> bool:
 
         if result.returncode != 0:
             log.error(
-                f"Failed to restart testserver, bash script returned {result.returncode}: {result.stderr.strip()}"
+                f"Failed to restart server {server_number}, bash script returned {result.returncode}: {result.stderr.strip()}"
             )
             return False
 
-        log.info("Testserver restarted successfully.")
+        log.info(f"Server {server_number} restarted successfully.")
         return True
 
     except subprocess.TimeoutExpired:
-        log.error("Testserver restart command timed out")
+        log.error(f"Server {server_number} restart command timed out")
         return False
     except subprocess.CalledProcessError as e:
-        log.error(f"Testserver restart command failed: {e}")
+        log.error(f"Server {server_number} restart command failed: {e}")
         return False
     except Exception as e:
-        log.error(f"Unexpected error restarting testserver: {e}")
+        log.error(f"Unexpected error restarting server {server_number}: {e}")
         return False
 
 
-# Stop the testserver
-def stop_testserver() -> bool:
+# Stop arma reforger server
+def stop_arma_reforger_server(server_number) -> bool:
     try:
         result = subprocess.run(
-            ["sudo", "systemctl", "stop", "arma-reforger-test-server"],
+            ["sudo", "systemctl", "stop", f"arma-reforger-server-{server_number}"],
             capture_output=True,
             text=True,
             check=False,
@@ -293,21 +204,21 @@ def stop_testserver() -> bool:
 
         if result.returncode != 0:
             log.error(
-                f"Failed to stop testserver, bash script returned {result.returncode}: {result.stderr.strip()}"
+                f"Failed to stop server {server_number}, bash script returned {result.returncode}: {result.stderr.strip()}"
             )
             return False
 
-        log.info("Testserver stopped successfully.")
+        log.info(f"Server {server_number} stopped successfully.")
         return True
 
     except subprocess.TimeoutExpired:
-        log.error("Testserver stop command timed out")
+        log.error(f"Server {server_number} stop command timed out")
         return False
     except subprocess.CalledProcessError as e:
-        log.error(f"Testserver stop command failed: {e}")
+        log.error(f"Server {server_number} stop command failed: {e}")
         return False
     except Exception as e:
-        log.error(f"Unexpected error stopping testserver: {e}")
+        log.error(f"Unexpected error stopping server {server_number}: {e}")
         return False
 
 

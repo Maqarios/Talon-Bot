@@ -1,31 +1,27 @@
-import sys
-import signal
 import asyncio
-
-import discord
-from discord.ext import commands
+import signal
+import sys
 
 import config
+import discord
+from discord.ext import commands
 from utils import configure_logging, get_logger
-from utils.utils import (
-    send_embed,
-    add_player_to_playersgroups,
-    remove_player_from_playersgroups,
+from utils.active_messages import (
+    ModsActiveMessages,
+    create_or_update_active_players_on_arma_reforger_server_status_message,
+    create_or_update_server_utilization_status_message,
+    create_or_update_teams_members_status_message,
 )
-from utils.misc import LoadoutSnapshotter
-from utils.database_managers import (
-    USERS_DBM,
-    ROLE_LOGS_DBM,
-)
+from utils.database_managers import ROLE_LOGS_DBM, USERS_DBM
 from utils.file_watchers import (
     ServerAdminToolsStatsFileWatcher,
     ServerConfigFileWatcher,
 )
-from utils.active_messages import (
-    create_or_update_server_utilization_status_message,
-    create_or_update_teams_members_status_message,
-    create_or_update_active_players_on_gameserver_status_message,
-    ModsActiveMessages,
+from utils.misc import LoadoutSnapshotter
+from utils.utils import (
+    add_player_to_playersgroups,
+    remove_player_from_playersgroups,
+    send_embed,
 )
 
 
@@ -34,33 +30,54 @@ class TalonBot(commands.Bot):
         super().__init__(*args, **kwargs)
 
         # File Watchers
-        self.server_stats_file_watcher = ServerAdminToolsStatsFileWatcher(
-            config.SERVERSTATS_PATH
+        self.server_config_file_watcher_1 = ServerConfigFileWatcher(
+            config.GET_ARMAR_SERVERCONFIG_FILE_PATH(1)
         )
-        self.server_config_file_watcher = ServerConfigFileWatcher(
-            config.SERVERCONFIG_PATH
+        self.server_config_file_watcher_2 = ServerConfigFileWatcher(
+            config.GET_ARMAR_SERVERCONFIG_FILE_PATH(2)
         )
-        self.server_config_file_watcher_test = ServerConfigFileWatcher(
-            config.SERVERCONFIG_TEST_PATH
+        self.server_config_file_watcher_3 = ServerConfigFileWatcher(
+            config.GET_ARMAR_SERVERCONFIG_FILE_PATH(3)
+        )
+        self.server_stats_file_watcher_1 = ServerAdminToolsStatsFileWatcher(
+            config.GET_ARMAR_SERVERSTATS_FILE_PATH(1)
+        )
+        self.server_stats_file_watcher_2 = ServerAdminToolsStatsFileWatcher(
+            config.GET_ARMAR_SERVERSTATS_FILE_PATH(2)
+        )
+        self.server_stats_file_watcher_3 = ServerAdminToolsStatsFileWatcher(
+            config.GET_ARMAR_SERVERSTATS_FILE_PATH(3)
         )
 
         # Snapshotters
-        self.loadout_snapshotter = LoadoutSnapshotter(
-            monitor_dir=config.LOADOUTS_DIR_PATH, max_snapshots=11
+        self.loadout_snapshotter_1 = LoadoutSnapshotter(
+            monitor_dir=config.GET_ARMAR_BLE_DIR_PATH(1), max_snapshots=6
+        )
+        self.loadout_snapshotter_2 = LoadoutSnapshotter(
+            monitor_dir=config.GET_ARMAR_BLE_DIR_PATH(2), max_snapshots=6
+        )
+        self.loadout_snapshotter_3 = LoadoutSnapshotter(
+            monitor_dir=config.GET_ARMAR_BLE_DIR_PATH(3), max_snapshots=6
         )
 
         # Active Messages
-        self.mods_active_messages = ModsActiveMessages(
+        self.mods_active_messages_1 = ModsActiveMessages(
             self,
-            config.CHANNEL_IDS["Mods"],
-            self.server_config_file_watcher,
-            config.SERVERCONFIG_PATH,
+            config.CHANNEL_IDS["Mods-Server-1"],
+            self.server_config_file_watcher_1,
+            config.GET_ARMAR_SERVERCONFIG_FILE_PATH(1),
         )
-        self.mods_active_messages_test = ModsActiveMessages(
+        self.mods_active_messages_2 = ModsActiveMessages(
             self,
-            config.CHANNEL_IDS["Mods-2"],
-            self.server_config_file_watcher_test,
-            config.SERVERCONFIG_TEST_PATH,
+            config.CHANNEL_IDS["Mods-Server-2"],
+            self.server_config_file_watcher_2,
+            config.GET_ARMAR_SERVERCONFIG_FILE_PATH(2),
+        )
+        self.mods_active_messages_3 = ModsActiveMessages(
+            self,
+            config.CHANNEL_IDS["Mods-Server-3"],
+            self.server_config_file_watcher_3,
+            config.GET_ARMAR_SERVERCONFIG_FILE_PATH(3),
         )
 
     async def setup_hook(self):
@@ -72,12 +89,17 @@ class TalonBot(commands.Bot):
         await self.load_extension("cogs.log")
 
         # Start file watchers
-        self.server_stats_file_watcher.start()
-        self.server_config_file_watcher.start()
-        self.server_config_file_watcher_test.start()
+        self.server_config_file_watcher_1.start()
+        self.server_config_file_watcher_2.start()
+        self.server_config_file_watcher_3.start()
+        self.server_stats_file_watcher_1.start()
+        self.server_stats_file_watcher_2.start()
+        self.server_stats_file_watcher_3.start()
 
         # Start snapshotters
-        self.loadout_snapshotter.start()
+        self.loadout_snapshotter_1.start()
+        self.loadout_snapshotter_2.start()
+        self.loadout_snapshotter_3.start()
 
         # Sync slash commands
         try:
@@ -102,18 +124,46 @@ class TalonBot(commands.Bot):
         )
 
         # Set up self-looping active messages
-        create_or_update_active_players_on_gameserver_status_message.start(
-            bot=bot,
-            channel_id=config.CHANNEL_IDS["Server Status"],
-            server_stats=self.server_stats_file_watcher,
-            server_config=self.server_config_file_watcher,
-            users_dbm=USERS_DBM,
+        armar_active_players = []
+        armar_active_players.append(
+            (
+                bot,
+                config.CHANNEL_IDS["Server Status"],
+                1,
+                self.server_stats_file_watcher_1,
+                self.server_config_file_watcher_1,
+                USERS_DBM,
+            )
+        )
+        armar_active_players.append(
+            (
+                bot,
+                config.CHANNEL_IDS["Server Status"],
+                2,
+                self.server_stats_file_watcher_2,
+                self.server_config_file_watcher_2,
+                USERS_DBM,
+            )
+        )
+        armar_active_players.append(
+            (
+                bot,
+                config.CHANNEL_IDS["Server Status"],
+                3,
+                self.server_stats_file_watcher_3,
+                self.server_config_file_watcher_3,
+                USERS_DBM,
+            )
+        )
+        create_or_update_active_players_on_arma_reforger_server_status_message.start(
+            armar_active_players
         )
         create_or_update_server_utilization_status_message.start(
             bot=bot, channel_id=config.CHANNEL_IDS["Stats"]
         )
-        self.mods_active_messages.create_or_update_mod_messages.start()
-        self.mods_active_messages_test.create_or_update_mod_messages.start()
+        self.mods_active_messages_1.create_or_update_mod_messages.start()
+        self.mods_active_messages_2.create_or_update_mod_messages.start()
+        self.mods_active_messages_3.create_or_update_mod_messages.start()
 
     async def on_member_join(self, user):
         # Check if the member is already registered
@@ -167,6 +217,10 @@ class TalonBot(commands.Bot):
             added_roles = [role for role in after.roles if role not in before.roles]
             removed_roles = [role for role in before.roles if role not in after.roles]
 
+            log.info(
+                f"Member {member.display_name} roles updated. Added: {[role.name for role in added_roles]}, Removed: {[role.name for role in removed_roles]}"
+            )
+
             for role in removed_roles:
                 # Update team if the role is in TEAMS_ROLES
                 if role.name in config.TEAMS_ROLES:
@@ -185,7 +239,17 @@ class TalonBot(commands.Bot):
                         continue
 
                     remove_player_from_playersgroups(
-                        config.PLAYERSGROUPS_PATH,
+                        config.GET_ARMAR_PLAYERSGROUPS_FILE_PATH(1),
+                        config.TEAMS_ROLES[role.name][1],
+                        user_bohemia_id,
+                    )
+                    remove_player_from_playersgroups(
+                        config.GET_ARMAR_PLAYERSGROUPS_FILE_PATH(2),
+                        config.TEAMS_ROLES[role.name][1],
+                        user_bohemia_id,
+                    )
+                    remove_player_from_playersgroups(
+                        config.GET_ARMAR_PLAYERSGROUPS_FILE_PATH(2),
                         config.TEAMS_ROLES[role.name][1],
                         user_bohemia_id,
                     )
@@ -207,7 +271,17 @@ class TalonBot(commands.Bot):
                         continue
 
                     add_player_to_playersgroups(
-                        config.PLAYERSGROUPS_PATH,
+                        config.GET_ARMAR_PLAYERSGROUPS_FILE_PATH(1),
+                        config.TEAMS_ROLES[role.name][1],
+                        user_bohemia_id,
+                    )
+                    add_player_to_playersgroups(
+                        config.GET_ARMAR_PLAYERSGROUPS_FILE_PATH(2),
+                        config.TEAMS_ROLES[role.name][1],
+                        user_bohemia_id,
+                    )
+                    add_player_to_playersgroups(
+                        config.GET_ARMAR_PLAYERSGROUPS_FILE_PATH(3),
                         config.TEAMS_ROLES[role.name][1],
                         user_bohemia_id,
                     )
@@ -230,10 +304,12 @@ class TalonBot(commands.Bot):
             return
 
         # Mod related message
-        if message.channel.id == config.CHANNEL_IDS["Mods"]:
-            await self.mods_active_messages.handle_message(message)
-        elif message.channel.id == config.CHANNEL_IDS["Mods-2"]:
-            await self.mods_active_messages_test.handle_message(message)
+        if message.channel.id == config.CHANNEL_IDS["Mods-Server-1"]:
+            await self.mods_active_messages_1.handle_message(message)
+        elif message.channel.id == config.CHANNEL_IDS["Mods-Server-2"]:
+            await self.mods_active_messages_2.handle_message(message)
+        elif message.channel.id == config.CHANNEL_IDS["Mods-Server-3"]:
+            await self.mods_active_messages_3.handle_message(message)
 
     async def on_interaction(self, interaction):
         if interaction.data and "custom_id" in interaction.data:
@@ -260,19 +336,17 @@ class TalonBot(commands.Bot):
                 )
 
             # Mod related interactions
-            if interaction.channel_id == config.CHANNEL_IDS["Mods"]:
-                # Acknowledge the button press
+            if interaction.channel_id == config.CHANNEL_IDS["Mods-Server-1"]:
                 await interaction.response.defer(ephemeral=True)
+                await self.mods_active_messages_1.handle_interaction(interaction)
 
-                # Call the update function
-                await self.mods_active_messages.handle_interaction(interaction)
-
-            if interaction.channel_id == config.CHANNEL_IDS["Mods-2"]:
-                # Acknowledge the button press
+            if interaction.channel_id == config.CHANNEL_IDS["Mods-Server-2"]:
                 await interaction.response.defer(ephemeral=True)
+                await self.mods_active_messages_2.handle_interaction(interaction)
 
-                # Call the update function
-                await self.mods_active_messages_test.handle_interaction(interaction)
+            if interaction.channel_id == config.CHANNEL_IDS["Mods-Server-3"]:
+                await interaction.response.defer(ephemeral=True)
+                await self.mods_active_messages_3.handle_interaction(interaction)
 
     async def on_raw_reaction_add(self, payload):
         # Get information from the payload
@@ -315,7 +389,9 @@ class TalonBot(commands.Bot):
         # self.server_config_file_watcher_test.stop()
 
         # Stop snapshotters
-        self.loadout_snapshotter.stop()
+        self.loadout_snapshotter_1.stop()
+        self.loadout_snapshotter_2.stop()
+        self.loadout_snapshotter_3.stop()
 
         # Shutdown database connections
         # TODO: Implement database shutdown logic

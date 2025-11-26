@@ -1,18 +1,14 @@
+import os
 import re
 import tempfile
-import os
-
 from datetime import datetime, time
 from pathlib import Path
 
+import config
 import discord
 from discord import app_commands
 from discord.ext import commands
-
-import config
-
 from utils.database_managers import USERS_DBM
-
 from utils.loggers import get_logger
 
 log = get_logger(__name__)
@@ -120,7 +116,7 @@ class LogCog(commands.Cog):
 
         activities = self._list_activities(
             log_file_path=Path(
-                config.LOG_DIR_PATH + f"/logs_{log_version}/console.log"
+                config.GET_ARMAR_LOGS_DIR_PATH(1) + f"/logs_{log_version}/console.log"
             ),
             instigator_bohemia_id=instigator_bohemia_id,
             start_time=start,
@@ -192,7 +188,7 @@ class LogCog(commands.Cog):
         options = []
 
         # Get directory paths for the user's sections
-        logs_dir = Path(config.LOG_DIR_PATH)
+        logs_dir = Path(config.GET_ARMAR_LOGS_DIR_PATH(1))
 
         # List all available log versions
         if logs_dir.exists():

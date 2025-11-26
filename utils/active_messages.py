@@ -1,26 +1,24 @@
-import time
 import datetime
 import re
-
-import discord
-from discord import InteractionType
-from discord.ui import Button, View
-from discord.ext import tasks
+import time
 
 import config
-
+import discord
+from discord import InteractionType
+from discord.ext import tasks
+from discord.ui import Button, View
 from utils.cache import ACTIVE_PLAYERS_BOHEMIA_ID_CACHE
 from utils.utils import (
-    is_port_listening,
-    get_server_utilization,
-    get_active_messages_id,
-    set_active_messages_id,
+    add_mod_to_serverconfig,
     format_mos,
     format_time_elapsed,
-    add_mod_to_serverconfig,
-    update_mod_version_in_serverconfig,
-    remove_mod_from_serverconfig,
+    get_active_messages_id,
     get_channel,
+    get_server_utilization,
+    is_port_listening,
+    remove_mod_from_serverconfig,
+    set_active_messages_id,
+    update_mod_version_in_serverconfig,
 )
 from utils.website_scrapers import (
     WorkshopModPageWebsiteScraper,
@@ -254,9 +252,24 @@ async def create_or_update_teams_members_status_message(
 
 
 @tasks.loop(seconds=30)
-async def create_or_update_active_players_on_gameserver_status_message(
+async def create_or_update_active_players_on_arma_reforger_server_status_message(
+    entries,
+):
+    await create_or_update_active_players_on_arma_reforger_server_status_message_util(
+        *entries[0]
+    )
+    await create_or_update_active_players_on_arma_reforger_server_status_message_util(
+        *entries[1]
+    )
+    await create_or_update_active_players_on_arma_reforger_server_status_message_util(
+        *entries[2]
+    )
+
+
+async def create_or_update_active_players_on_arma_reforger_server_status_message_util(
     bot,
     channel_id,
+    server_number,
     server_stats,
     server_config,
     users_dbm,
@@ -277,16 +290,16 @@ async def create_or_update_active_players_on_gameserver_status_message(
     try:
         message_id = get_active_messages_id(
             config.ACTIVEMESSAGESIDS_PATH,
-            "active_players_on_gameserver_status_message_id",
+            f"active_players_on_arma_reforger_server_status_message_id_{server_number}",
         )
         message = await channel.fetch_message(message_id)
     except (FileNotFoundError, KeyError, discord.NotFound) as e:
         message = await create_empty_message(
-            channel, "Creating a new message for team members status."
+            channel, "Creating a new message for active players status."
         )
         set_active_messages_id(
             config.ACTIVEMESSAGESIDS_PATH,
-            "active_players_on_gameserver_status_message_id",
+            f"active_players_on_arma_reforger_server_status_message_id_{server_number}",
             message.id,
         )
     except discord.Forbidden:
@@ -297,17 +310,17 @@ async def create_or_update_active_players_on_gameserver_status_message(
 
     # Create Discord embed for better formatting
     embed = discord.Embed(
-        title="Server is Online",
+        title=f"Server {server_number}: Online",
         color=discord.Color.green(),
         timestamp=datetime.datetime.now(),
     )
 
     # Get gameserver online status
-    gameserver_status = is_port_listening(config.GAMESERVER_PORT)
+    gameserver_status = is_port_listening(server_config.bindPort)
 
     if not gameserver_status:
         # await channel.edit(name=f"⏳│𝐒𝐞𝐫𝐯𝐞𝐫-𝐒𝐭𝐚𝐭𝐮𝐬-〔Offline〕")
-        embed.title = "Server is Offline"
+        embed.title = f"Server {server_number}: Offline"
         embed.color = discord.Color.red()
     else:
         # await channel.edit(
@@ -532,6 +545,9 @@ class ModsActiveMessages:
         if self.mod_idx == -1:
             # Clear all previous messages
             await self.clear()
+
+        if len(self.server_config.game.mods) == 0:
+            return  # No mods to process
 
         self.mod_idx += 1
         if self.mod_idx >= len(self.server_config.game.mods):

@@ -1,15 +1,13 @@
 import subprocess
 
+import config
 import discord
 from discord import app_commands
 from discord.ext import commands
-
-import config
-from utils.utils import restart_gameserver as restart_gameserver_util
-from utils.utils import update_gameserver as update_gameserver_util
-from utils.utils import start_testserver as start_testserver_util
-from utils.utils import restart_testserver as restart_testserver_util
-from utils.utils import stop_testserver as stop_testserver_util
+from utils.utils import restart_arma_reforger_server as restart_reforger_server_util
+from utils.utils import start_arma_reforger_server as start_reforger_server_util
+from utils.utils import stop_arma_reforger_server as stop_reforger_server_util
+from utils.utils import update_arma_reforger
 
 
 class MiscCog(commands.Cog):
@@ -77,32 +75,11 @@ class MiscCog(commands.Cog):
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    # Slash Command: /restart_gameserver
+    # Slash Command: /update_reforger
     @app_commands.command(
-        name="restart_gameserver", description="Restart the game server."
+        name="update_reforger", description="Update Arma Reforger Files."
     )
-    async def restart_gameserver(self, interaction: discord.Interaction):
-        if interaction.user.id not in config.ADMIN_IDS:
-            await interaction.response.send_message(
-                "You don't have permission to use this command.", ephemeral=True
-            )
-            return
-
-        try:
-            restart_gameserver_util()
-            await interaction.response.send_message(
-                "Game server is restarting...", ephemeral=True
-            )
-        except subprocess.CalledProcessError as e:
-            await interaction.response.send_message(
-                f"Failed to restart the game server: {e}", ephemeral=True
-            )
-
-    # Slash Command: /update_gameserver
-    @app_commands.command(
-        name="update_gameserver", description="Update the game server."
-    )
-    async def update_gameserver(self, interaction: discord.Interaction):
+    async def update_reforger(self, interaction: discord.Interaction):
         if interaction.user.id not in config.ADMIN_IDS:
             await interaction.response.send_message(
                 "You don't have permission to use this command.", ephemeral=True
@@ -113,37 +90,21 @@ class MiscCog(commands.Cog):
         await interaction.response.defer(thinking=True, ephemeral=True)
 
         try:
-            update_gameserver_util()
+            update_arma_reforger()
             await interaction.edit_original_response(content="Game server is updated.")
         except subprocess.CalledProcessError as e:
             await interaction.edit_original_response(
                 content=f"Failed to update the game server: {e}"
             )
 
-    # Slash Command: /start_testserver
-    @app_commands.command(name="start_testserver", description="Start the test server.")
-    async def start_testserver(self, interaction: discord.Interaction):
-        if interaction.user.id not in config.ADMIN_IDS:
-            await interaction.response.send_message(
-                "You don't have permission to use this command.", ephemeral=True
-            )
-            return
-
-        try:
-            start_testserver_util()
-            await interaction.response.send_message(
-                "Test server is starting...", ephemeral=True
-            )
-        except subprocess.CalledProcessError as e:
-            await interaction.response.send_message(
-                f"Failed to start the test server: {e}", ephemeral=True
-            )
-
-    # Slash Command: /restart_testserver
+    # Slash Command: /start_reforger_server
     @app_commands.command(
-        name="restart_testserver", description="Restart the test server."
+        name="start_reforger_server", description="Start Arma Reforger Server."
     )
-    async def restart_testserver(self, interaction: discord.Interaction):
+    @app_commands.describe(server_number="The server number to start (1, 2, ...).")
+    async def start_reforger_server(
+        self, interaction: discord.Interaction, server_number: int
+    ):
         if interaction.user.id not in config.ADMIN_IDS:
             await interaction.response.send_message(
                 "You don't have permission to use this command.", ephemeral=True
@@ -151,18 +112,23 @@ class MiscCog(commands.Cog):
             return
 
         try:
-            restart_testserver_util()
+            start_reforger_server_util(server_number)
             await interaction.response.send_message(
-                "Test server is restarting...", ephemeral=True
+                f"Arma Reforger Server {server_number} is starting...", ephemeral=True
             )
         except subprocess.CalledProcessError as e:
             await interaction.response.send_message(
-                f"Failed to restart the test server: {e}", ephemeral=True
+                f"Failed to start server {server_number}: {e}", ephemeral=True
             )
 
-    # Slash Command: /stop_testserver
-    @app_commands.command(name="stop_testserver", description="Stop the test server.")
-    async def stop_testserver(self, interaction: discord.Interaction):
+    # Slash Command: /restart_reforger_server
+    @app_commands.command(
+        name="restart_reforger_server", description="Restart Arma Reforger Server."
+    )
+    @app_commands.describe(server_number="The server number to restart (1, 2, ...).")
+    async def restart_reforger_server(
+        self, interaction: discord.Interaction, server_number: int
+    ):
         if interaction.user.id not in config.ADMIN_IDS:
             await interaction.response.send_message(
                 "You don't have permission to use this command.", ephemeral=True
@@ -170,13 +136,37 @@ class MiscCog(commands.Cog):
             return
 
         try:
-            stop_testserver_util()
+            restart_reforger_server_util(server_number)
             await interaction.response.send_message(
-                "Test server is stopping...", ephemeral=True
+                f"Arma Reforger Server {server_number} is restarting...", ephemeral=True
             )
         except subprocess.CalledProcessError as e:
             await interaction.response.send_message(
-                f"Failed to stop the test server: {e}", ephemeral=True
+                f"Failed to restart server {server_number}: {e}", ephemeral=True
+            )
+
+    # Slash Command: /stop_reforger_server
+    @app_commands.command(
+        name="stop_reforger_server", description="Stop Arma Reforger Server."
+    )
+    @app_commands.describe(server_number="The server number to stop (1, 2, ...).")
+    async def stop_reforger_server(
+        self, interaction: discord.Interaction, server_number: int
+    ):
+        if interaction.user.id not in config.ADMIN_IDS:
+            await interaction.response.send_message(
+                "You don't have permission to use this command.", ephemeral=True
+            )
+            return
+
+        try:
+            stop_reforger_server_util(server_number)
+            await interaction.response.send_message(
+                f"Arma Reforger Server {server_number} is stopping...", ephemeral=True
+            )
+        except subprocess.CalledProcessError as e:
+            await interaction.response.send_message(
+                f"Failed to stop server {server_number}: {e}", ephemeral=True
             )
 
 
