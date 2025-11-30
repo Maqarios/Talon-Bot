@@ -202,9 +202,9 @@ async def create_or_update_teams_members_status_message(
             user_roles = member.roles
 
             if len(display_name) > 23:
-                name_list += f"{idx + 1}• {display_name[:23]}...\n"
+                name_list += f"{idx + 1}. {display_name[:23]}...\n"
             else:
-                name_list += f"{idx + 1}• {display_name}\n"
+                name_list += f"{idx + 1}. {display_name}\n"
 
             if len(format_mos(user_roles, config.MOS_ROLES)) > 20:
                 mos_list += f"{format_mos(user_roles, config.MOS_ROLES)[:20]}...\n"
@@ -335,17 +335,17 @@ async def create_or_update_active_players_on_arma_reforger_server_status_message
         if server_stats.players == -1:
             embed.color = discord.Color.red()
             field["name"] = "Something went wrong. Contact the server administrator."
-        if server_stats.players == 0:
+        elif server_stats.players == 0:
             embed.color = discord.Color.yellow()
             field["name"] = (
                 f"Players ( {server_stats.players} / {server_config.game.maxPlayers} )"
             )
         else:
             field["name"] = (
-                f"Operatives ( {server_stats.players} / {server_config.game.maxPlayers} )"
+                f"Players ( {server_stats.players} / {server_config.game.maxPlayers} )"
             )
             field["value"] = "\n".join(
-                [f"• {player}" for player in server_stats.connected_players.values()]
+                [f"⠀{player}" for player in server_stats.connected_players.values()]
             )
 
             for (
@@ -364,16 +364,27 @@ async def create_or_update_active_players_on_arma_reforger_server_status_message
 
         embed.add_field(**field)
 
+        # Scenario details field
+        embed.add_field(
+            name="Scenario Details",
+            value=(
+                f"⠀**Name:** {(' ').join(re.findall(r'[A-Z]+(?![a-z])|[A-Z][a-z]*', server_config.game.scenarioId.split('/')[-1].split('.')[0]))}\n"
+                f"⠀**FPS:** {server_stats.fps}\n"
+                f"⠀**AI:** {server_stats.ai_characters}\n"
+                f"⠀**Vehicles:** {server_stats.registered_vehicles}\n"
+                f"⠀**Uptime:** {datetime.timedelta(seconds=server_stats.uptime_seconds)}\n"
+            ),
+            inline=False,
+        )
+
         # Server details field
         embed.add_field(
             name="Server Details",
             value=(
-                f"• **Name:** {server_config.game.name}\n"
-                f"• **Scenario:** {(' ').join(re.findall(r'[A-Z]+(?![a-z])|[A-Z][a-z]*', server_config.game.scenarioId.split('/')[-1].split('.')[0]))}\n"
-                f"• **Password:** {server_config.game.password}\n"
-                f"• **IP:** {server_config.publicAddress}\n"
-                f"• **Port:** {server_config.publicPort}\n"
-                f"• **Uptime:** {datetime.timedelta(seconds=server_stats.uptime_seconds)}\n"
+                f"⠀**Name:** {server_config.game.name}\n"
+                f"⠀**Password:** {server_config.game.password}\n"
+                f"⠀**IP:** {server_config.publicAddress}\n"
+                f"⠀**Port:** {server_config.publicPort}\n"
             ),
             inline=False,
         )
