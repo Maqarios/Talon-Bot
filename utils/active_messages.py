@@ -152,6 +152,9 @@ async def create_or_update_teams_members_status_message(
             f"Permission denied. Contact the server administrator to check permissions for channel {channel_id}."
         )
         return False
+    except Exception as e:
+        print(f"Unknown Exception: {e}")
+        return False
 
     # Update the message content
     refresh_button = Button(
@@ -202,9 +205,9 @@ async def create_or_update_teams_members_status_message(
             user_roles = member.roles
 
             if len(display_name) > 23:
-                name_list += f"{idx + 1}. {display_name[:23]}...\n"
+                name_list += f"{idx + 1}- {display_name[:23]}...\n"
             else:
-                name_list += f"{idx + 1}. {display_name}\n"
+                name_list += f"{idx + 1}- {display_name}\n"
 
             if len(format_mos(user_roles, config.MOS_ROLES)) > 20:
                 mos_list += f"{format_mos(user_roles, config.MOS_ROLES)[:20]}...\n"
@@ -306,6 +309,9 @@ async def create_or_update_active_players_on_arma_reforger_server_status_message
         print(
             f"Permission denied. Contact the server administrator to check permissions for channel {channel_id}."
         )
+        return False
+    except Exception as e:
+        print(f"Unknown Exception: {e}")
         return False
 
     # Create Discord embed for better formatting

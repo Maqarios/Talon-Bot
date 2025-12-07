@@ -249,7 +249,7 @@ class TalonBot(commands.Bot):
                         user_bohemia_id,
                     )
                     remove_player_from_playersgroups(
-                        config.GET_ARMAR_PLAYERSGROUPS_FILE_PATH(2),
+                        config.GET_ARMAR_PLAYERSGROUPS_FILE_PATH(3),
                         config.TEAMS_ROLES[role.name][1],
                         user_bohemia_id,
                     )
