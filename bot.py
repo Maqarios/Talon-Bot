@@ -313,6 +313,19 @@ class TalonBot(commands.Bot):
 
     async def on_interaction(self, interaction):
         if interaction.data and "custom_id" in interaction.data:
+            # Send interaction to log channel
+            try:
+                await send_embed(
+                    channel=self.get_channel(config.CHANNEL_IDS["Logs"]),
+                    description=f"User {interaction.user.display_name} used button {interaction.data["custom_id"]} in channel {interaction.channel_id}",
+                    color=discord.Color.blue(),
+                )
+                log.info(
+                    f"User {interaction.user.display_name} used button {interaction.data["custom_id"]} in channel {interaction.channel_id}"
+                )
+            except Exception as e:
+                log.info(f"Unknown Exception: {e}")
+
             # Update Status Message
             if interaction.data["custom_id"] == "refresh_teams_members_status_message":
                 # Acknowledge the button press
