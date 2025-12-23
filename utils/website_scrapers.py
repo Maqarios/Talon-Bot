@@ -1,10 +1,9 @@
 import json
-
-import requests
-
-from bs4 import BeautifulSoup
+from datetime import datetime, timezone
 
 import config
+import requests
+from bs4 import BeautifulSoup
 
 
 def WorkshopModSearchWebsiteScraper(search_query):
@@ -38,11 +37,15 @@ def WorkshopModSearchWebsiteScraper(search_query):
 
 class WorkshopModPageWebsiteScraper:
     def __init__(self, mod_id, dependencies=None):
-        self.url = config.WORKSHOP_MOD_PAGE_URL + str(mod_id) + "/changelog"
+        self.url = config.WORKSHOP_MOD_PAGE_URL + str(mod_id)
 
         self.mod_id = mod_id
         self.name = None
         self.version = None
+        self.rating = None
+        self.downloads = None
+        self.updated_at = None
+        self.game_version = None
         self.dependencies = {} if not dependencies else dependencies
 
         self.scrape()
@@ -66,8 +69,20 @@ class WorkshopModPageWebsiteScraper:
 
         # Extract data from JSON
         asset_data = json_data["props"]["pageProps"]["asset"]
+        self.downloads = json_data["props"]["pageProps"]["getAssetDownloadTotal"][
+            "total"
+        ]
+
         self.name = asset_data["name"]
         self.version = asset_data["currentVersionNumber"]
+        self.rating = int(asset_data["averageRating"] * 100)
+        self.updated_at = (
+            datetime.fromisoformat(asset_data["updatedAt"].replace("Z", "+00:00"))
+            .date()
+            .strftime("%d.%m.%Y")
+        )
+
+        self.game_version = asset_data["gameVersion"]
         dependencies = asset_data["dependencies"]
 
         # TODO: Get deep dependencies while using cache
