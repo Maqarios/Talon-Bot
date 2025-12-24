@@ -462,14 +462,14 @@ class ModsActiveMessages:
         ):
             embed.title = "{} (Update Available)".format(workshop_scraper.name)
             embed.color = discord.Color.blue()
-            embed.description = "**Version**: {} ⟶ {}\n**Rating**: {}%\n**Game Version**: {}\n**Downloads**: {:,}\n**Updated At**: {}\n[Workshop Link]({})".format(
+            embed.description = "[Workshop Link]({})\n**Version**: **{} ⟶ {}**\n**Rating**: {}%\n**Game Version**: {}\n**Downloads**: {:,}\n**Updated At**: {}".format(
+                config.WORKSHOP_MOD_PAGE_URL + mod_id,
                 self.server_config.game.searchable_mods[mod_id]["version"],
                 workshop_scraper.version,
                 workshop_scraper.rating,
                 workshop_scraper.game_version,
                 workshop_scraper.downloads,
                 workshop_scraper.updated_at,
-                config.WORKSHOP_MOD_PAGE_URL + mod_id,
             )
 
             view.add_item(update_button)
@@ -479,13 +479,13 @@ class ModsActiveMessages:
         else:
             embed.title = "{}".format(workshop_scraper.name)
             embed.color = discord.Color.green()
-            embed.description = "**Version**: {}\n**Rating**: {}%\n**Game Version**: {}\n**Downloads**: {:,}\n**Updated At**: {}\n[Workshop Link]({})".format(
+            embed.description = "[Workshop Link]({})\n**Version**: {}\n**Rating**: {}%\n**Game Version**: {}\n**Downloads**: {:,}\n**Updated At**: {}".format(
+                config.WORKSHOP_MOD_PAGE_URL + mod_id,
                 workshop_scraper.version,
                 workshop_scraper.rating,
                 workshop_scraper.game_version,
                 workshop_scraper.downloads,
                 workshop_scraper.updated_at,
-                config.WORKSHOP_MOD_PAGE_URL + mod_id,
             )
 
             view.add_item(check_button)
