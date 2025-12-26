@@ -462,10 +462,11 @@ class ModsActiveMessages:
         ):
             embed.title = "{} (Update Available)".format(workshop_scraper.name)
             embed.color = discord.Color.blue()
-            embed.description = "[Workshop Link]({})\n**Version**: **{} ⟶ {}**\n**Rating**: {}%\n**Game Version**: {}\n**Downloads**: {:,}\n**Updated At**: {}".format(
+            embed.description = "[Workshop Link]({})\n**Version**: **{} ⟶ {}**\n**Author**: {}\n**Rating**: {}%\n**Game Version**: {}\n**Downloads**: {:,}\n**Updated At**: {}".format(
                 config.WORKSHOP_MOD_PAGE_URL + mod_id,
                 self.server_config.game.searchable_mods[mod_id]["version"],
                 workshop_scraper.version,
+                workshop_scraper.author,
                 workshop_scraper.rating,
                 workshop_scraper.game_version,
                 workshop_scraper.downloads,
@@ -479,9 +480,10 @@ class ModsActiveMessages:
         else:
             embed.title = "{}".format(workshop_scraper.name)
             embed.color = discord.Color.green()
-            embed.description = "[Workshop Link]({})\n**Version**: {}\n**Rating**: {}%\n**Game Version**: {}\n**Downloads**: {:,}\n**Updated At**: {}".format(
+            embed.description = "[Workshop Link]({})\n**Version**: {}\n**Author**: {}\n**Rating**: {}%\n**Game Version**: {}\n**Downloads**: {:,}\n**Updated At**: {}".format(
                 config.WORKSHOP_MOD_PAGE_URL + mod_id,
                 workshop_scraper.version,
+                workshop_scraper.author,
                 workshop_scraper.rating,
                 workshop_scraper.game_version,
                 workshop_scraper.downloads,
@@ -544,7 +546,7 @@ class ModsActiveMessages:
         if workshop_scraper:
             embed.description = "Search results for **{}**:".format(search_query)
         else:
-            embed.discription = "No mods found for **{}**.".format(search_query)
+            embed.description = "No mods found for **{}**.".format(search_query)
             embed.color = discord.Color.red()
 
         return embed, view

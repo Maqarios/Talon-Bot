@@ -42,6 +42,7 @@ class WorkshopModPageWebsiteScraper:
         self.mod_id = mod_id
         self.name = None
         self.version = None
+        self.author = None
         self.rating = None
         self.downloads = None
         self.updated_at = None
@@ -81,6 +82,7 @@ class WorkshopModPageWebsiteScraper:
             .date()
             .strftime("%d.%m.%Y")
         )
+        self.author = asset_data["author"]["username"]
 
         self.game_version = asset_data["gameVersion"]
         dependencies = asset_data["dependencies"]
